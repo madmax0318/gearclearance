@@ -5,7 +5,7 @@ Rules:
 - source_url must be a URL copied from the email. Do not invent URLs, prices, or merchants.
 - Do not return affiliate_url. Do not add tag, MID, publisher id, website id, or tracking parameters.
 - price is a number or null.
-- aisle is one of guns, ammo, optics, accessories, food-storage, survival, household, gaming, drones, or null.
+- aisle is one of guns, ammo, optics, accessories, apparel, food-storage, survival, household, gaming, drones, or null.
 - needs_affiliate must be true.
 - Never guess an affiliate tag.`;
 

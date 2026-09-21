@@ -294,5 +294,65 @@
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-14"
+  },
+  {
+    "slug": "carhartt-rain-defender-jacket",
+    "title": "Carhartt Men's Rain Defender Lightweight Insulated Jacket",
+    "merchant": "Sportsman's Warehouse",
+    "price_now": 78.77,
+    "price_was": 139.99,
+    "category": "apparel",
+    "why": "Sale colors of this Rain Defender jacket start at $78.77. The previous tag on the same shell runs up to $139.99.",
+    "url": "https://www.sportsmans.com/workwear/workwear-coats-jackets/carhartt-mens-rain-defender-lightweight-insulated-jacket/p/p302367",
+    "curated": true,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "gale-peak-waterproof-hiking-boots",
+    "title": "Sportsman's Warehouse Men's Gale Peak Waterproof Mid Hiking Boots",
+    "merchant": "Sportsman's Warehouse",
+    "price_now": 41.77,
+    "price_was": 74.99,
+    "category": "apparel",
+    "why": "Waterproof mid hikers at $41.77. The same Gale Peak pair was listed at $74.99.",
+    "url": "https://www.sportsmans.com/footwear-outdoor-casual-men-women-youth/mens-hiking-boots/sportsmans-warehouse-mens-gale-peak-waterproof-mid-hiking-boots/p/p310987",
+    "curated": false,
+    "posted": "2026-09-16"
+  },
+  {
+    "slug": "killik-precision-shooters-glove",
+    "title": "Killik Men's Precision Shooters Glove",
+    "merchant": "Sportsman's Warehouse",
+    "price_now": 27.77,
+    "price_was": 49.99,
+    "category": "apparel",
+    "why": "A thin shooters glove under $28. The same pair was $49.99 before this cut.",
+    "url": "https://www.sportsmans.com/clothing-outdoor-casual-men-women-youth/accessories/hats-gloves/killik-mens-precision-shooters-glove/p/p303150",
+    "curated": false,
+    "posted": "2026-09-15"
+  },
+  {
+    "slug": "killik-merino-base-layer-shirt",
+    "title": "Killik Men's Merino Long Sleeve Base Layer Shirt",
+    "merchant": "Sportsman's Warehouse",
+    "price_now": 59.77,
+    "price_was": 79.99,
+    "category": "apparel",
+    "why": "Merino long-sleeve base layer at $59.77, down from $79.99. A field layer, not a gym shirt.",
+    "url": "https://www.sportsmans.com/clothing-outdoor-casual-men-women-youth/base-layers/base-layer-tops/killik-mens-merino-long-sleeve-base-layer-shirt/p/p313652",
+    "curated": false,
+    "posted": "2026-09-12"
+  },
+  {
+    "slug": "sitka-traverse-beanie",
+    "title": "Sitka Traverse Beanie — Waterfowl Marsh",
+    "merchant": "Sportsman's Warehouse",
+    "price_now": 18.77,
+    "price_was": 35.0,
+    "category": "apparel",
+    "why": "Traverse beanie in Waterfowl Marsh at $18.77. It was $35 before the markdown.",
+    "url": "https://www.sportsmans.com/hunting-headwear/sitka-traverse-beanie-waterfowl-marsh-one-size-fits-most/p/1720459",
+    "curated": false,
+    "posted": "2026-09-09"
   }
 ]

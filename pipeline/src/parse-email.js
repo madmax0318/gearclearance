@@ -12,6 +12,7 @@ const AISLE_RULES = [
   { aisle: "survival", re: /\b(water filters?|ifak|first aid|fire starters?|lifestraw)\b/i },
   { aisle: "household", re: /\b(power stations?|vacuum|drills?|storage bins?|kitchen|household)\b/i },
   { aisle: "accessories", re: /\b(magazines?|slings?|holsters?|weapon lights?|bipods?|mounts?)\b/i },
+  { aisle: "apparel", re: /\b(apparels?|jackets?|boots?|gloves?|baselayers?|base layers?|beanies?|workwear|hoodies?)\b/i },
 ];
 
 const PRICE_PATTERNS = [
