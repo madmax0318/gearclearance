@@ -1,0 +1,26 @@
+[
+  {
+    "merchant_domain": "primaryarms.com",
+    "network": "avantlink",
+    "status": "live",
+    "publisher_id_env": "AVANTLINK_AID",
+    "link_template": "https://network.example.test/avantlink?website_id={{AVANTLINK_AID}}&url={{ENCODED_URL}}",
+    "notes": "Scaffold template on an example host. Replace the template from the network deep-link tool. Do not commit the publisher id."
+  },
+  {
+    "merchant_domain": "rei.com",
+    "network": "impact",
+    "status": "pending_approval",
+    "publisher_id_env": "IMPACT_PUBLISHER_ID",
+    "link_template": "https://network.example.test/impact?publisher={{IMPACT_PUBLISHER_ID}}&url={{ENCODED_URL}}",
+    "notes": "Pending approval. Wrap stays fail-closed until status is live."
+  },
+  {
+    "merchant_domain": "amazon.com",
+    "network": "amazon",
+    "status": "blocked_tos",
+    "publisher_id_env": "AMAZON_ASSOCIATES_TAG",
+    "link_template": "https://network.example.test/amazon?tag={{AMAZON_ASSOCIATES_TAG}}&url={{ENCODED_URL}}",
+    "notes": "Soft goods only, and only where Associates allows the category. Weapons and ammo stay blocked."
+  }
+]

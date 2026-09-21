@@ -1,0 +1,4 @@
+merchant_domain,network,status,publisher_id_env,link_template,notes
+primaryarms.com,avantlink,live,AVANTLINK_AID,https://network.example.test/avantlink?website_id={{AVANTLINK_AID}}&url={{ENCODED_URL}},Scaffold template on an example host. Do not commit the publisher id.
+rei.com,impact,pending_approval,IMPACT_PUBLISHER_ID,https://network.example.test/impact?publisher={{IMPACT_PUBLISHER_ID}}&url={{ENCODED_URL}},Pending approval. Wrap stays fail-closed until status is live.
+amazon.com,amazon,blocked_tos,AMAZON_ASSOCIATES_TAG,https://network.example.test/amazon?tag={{AMAZON_ASSOCIATES_TAG}}&url={{ENCODED_URL}},Soft goods only where the program allows. Weapons and ammo stay blocked.
