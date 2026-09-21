@@ -5,7 +5,8 @@
   "description": "The Stash Deals — static affiliate deal aggregator prototype. Grow your stash without shrinking your wallet.",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "test": "npm test --prefix pipeline"
   },
   "engines": {
     "node": ">=18"

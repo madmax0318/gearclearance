@@ -6,7 +6,7 @@ Static prototype of an affiliate deal aggregator. Cards link out to merchants. T
 
 **Public domain (intended):** [thestash.deals](https://thestash.deals)
 
-**Prototype host:** [gearclearance.mcdaniel.fyi](https://gearclearance.mcdaniel.fyi) on Cloudflare Pages. The published site is the `dist/` folder from `npm run build`. Canonical URLs, the sitemap, and JSON-LD still use the prototype host until thestash.deals is the live hostname. No Node server, email ingest, scraper, or live affiliate API.
+**Prototype host:** [gearclearance.mcdaniel.fyi](https://gearclearance.mcdaniel.fyi) on Cloudflare Pages. The published site is the `dist/` folder from `npm run build`. Canonical URLs, the sitemap, and JSON-LD still use the prototype host until thestash.deals is the live hostname. The Pages build does not run email ingest, a scraper, or a live affiliate API. Optional Ion Cannon drafts live in `pipeline/` and are separate from `npm run build`.
 
 ## Local preview
 
@@ -90,3 +90,4 @@ The footer of every page includes the FTC affiliate disclosure.
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
 - `public/_headers`, `public/favicon.svg`, `public/brand/stash-deals-logo.jpg` — copied into `dist/`
+- `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish). Not part of the Pages build. See `pipeline/README.md`.

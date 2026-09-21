@@ -1,0 +1,14 @@
+{
+  "name": "@thestash/pipeline",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "The Stash Deals parking-lot pipeline for Ion Cannon. Collect → Clean → Wrap → Review → Publish. Not used by the static site build.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "parse": "node src/cli.js parse"
+  }
+}

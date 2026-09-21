@@ -1,0 +1,29 @@
+From: Primary Arms Deals <deals@mail.primaryarms.example.test>
+To: stash-deals@example.test
+Subject: Clearance: Holosun HS403B micro red dot $149.99 (was $229.99)
+Date: Thu, 18 Sep 2026 15:04:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="stash-boundary"
+
+--stash-boundary
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Primary Arms clearance
+
+Holosun HS403B Micro Red Dot is $149.99 (was $229=
+.99).
+
+Product page:
+https://www.primaryarms.com/holosun-hs403b-micro-red-dot?utm_source=3Dnewsletter&utm_medium=3Demail&utm_campaign=3Dclearance
+
+This message was sent to a deals inbox. No account number is included.
+
+--stash-boundary
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<p>HTML hopper only.</p>
+<p><a href=3D"https://evil.example/not-the-product">Shop</a></p>
+
+--stash-boundary--
