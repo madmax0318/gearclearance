@@ -89,5 +89,5 @@ The footer of every page includes the FTC affiliate disclosure.
 - `scripts/build.mjs` — writes `dist/`
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
-- `public/_headers`, `public/favicon.svg`, `public/brand/stash-deals-logo.jpg` — copied into `dist/`
+- `public/_headers`, `public/favicon.svg`, `public/brand/stash-deals-logo.jpg`, `public/brand/stash-deals-logo-nav.jpg` — copied into `dist/`. Nav chrome uses the cropped wordmark.
 - `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish). Not part of the Pages build. See `pipeline/README.md`.
