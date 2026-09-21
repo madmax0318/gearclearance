@@ -360,7 +360,7 @@ function renderChrome({ depth, activeId, deals, main }) {
 }
 
 // Impact.com Universal Tracking Tag (account snippet P-A7822267). Permanent, every page.
-const IMPACT_UTT = `<script type="text/javascript">(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A7822267-c904-4255-a7d2-efe7698726ea1.js','script','impactStat',document,window);impactStat('transformLinks');impactStat('trackImpression');</script>`;
+const IMPACT_UTT = `<script type="text/javascript">(function(){var s=document.createElement("script");s.src="https://utt.impactcdn.com/P-A7822267-c904-4255-a7d2-efe7698726ea1.js";s.async=true;document.head.appendChild(s);})();</script>`;
 
 function pageShell({ title, description, canonical, robots = "index, follow", ogType = "website", depth, json, body }) {
   const blocks = json
