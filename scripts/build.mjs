@@ -632,18 +632,6 @@ function writeFile(rel, contents) {
   fs.writeFileSync(dest, contents);
 }
 
-// TEMP AvantLink ownership verify app 1655057 — remove after verify
-const AVANTLINK_HOME_VERIFY = `<!-- TEMP AvantLink ownership verify app 1655057 — remove after verify -->
-<script type="text/javascript" src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=c3faa08455ca3fdfb5861ff2736b00d74d7f9664"></script>
-`;
-
-function withAvantLinkHomeVerify(html) {
-  const closing = "</body>";
-  const at = html.lastIndexOf(closing);
-  if (at < 0) throw new Error("Home page shell is missing </body>");
-  return `${html.slice(0, at)}${AVANTLINK_HOME_VERIFY}${html.slice(at)}`;
-}
-
 function copyFile(from, rel) {
   const dest = path.join(distDir, rel);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -659,21 +647,19 @@ function build() {
 
   writeFile(
     "index.html",
-    withAvantLinkHomeVerify(
-      listingPage({
-        activeId: "home",
-        depth: 0,
-        canonicalPath: "/",
-        title: HOME.title,
-        description: HOME.description,
-        h1: HOME.h1,
-        eyebrow: HOME.eyebrow,
-        lede: HOME.lede,
-        deals,
-        allDeals: deals,
-        tagFilters: true,
-      }),
-    ),
+    listingPage({
+      activeId: "home",
+      depth: 0,
+      canonicalPath: "/",
+      title: HOME.title,
+      description: HOME.description,
+      h1: HOME.h1,
+      eyebrow: HOME.eyebrow,
+      lede: HOME.lede,
+      deals,
+      allDeals: deals,
+      tagFilters: true,
+    }),
   );
 
   for (const category of CATEGORIES) {
@@ -747,23 +733,16 @@ function build() {
   if (!home.includes("Affiliate disclosure") || !home.includes("Guns") || !home.includes('rel="sponsored noopener noreferrer"')) {
     throw new Error("Home page is missing disclosure, navigation, or sponsored links");
   }
-  if (!home.includes(AVANTLINK_HOME_VERIFY.trim())) {
-    throw new Error("Home page is missing temporary AvantLink ownership verification");
-  }
-  if (!home.includes('src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=c3faa08455ca3fdfb5861ff2736b00d74d7f9664"')) {
-    throw new Error("AvantLink verify script must use the official http:// src");
-  }
-  if (home.includes("https://classic.avantlink.com/affiliate_app_confirm.php")) {
-    throw new Error("AvantLink verify script must not use https:// — the matcher looks for http://");
-  }
   const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
   const sampleDeal = fs.readFileSync(path.join(distDir, "deals", deals[0].slug, "index.html"), "utf8");
   const impactCount = (html) => html.split(IMPACT_UTT).length - 1;
   if (impactCount(home) !== 1 || impactCount(guns) !== 1 || impactCount(sampleDeal) !== 1) {
     throw new Error("Impact tracking tag must appear exactly once in the shared page shell");
   }
-  if (guns.includes("avantlink.com") || guns.includes("1655057") || sampleDeal.includes("avantlink.com")) {
-    throw new Error("AvantLink verification must be homepage only");
+  for (const html of [home, guns, sampleDeal]) {
+    if (html.includes("classic.avantlink.com") || html.includes("TEMP AvantLink") || html.includes("1655057")) {
+      throw new Error("Temporary AvantLink ownership verification script must not be injected");
+    }
   }
   const confirmName = "avantlink_confirmation.txt";
   const confirmSrc = fs.readFileSync(path.join(rootDir, "public", confirmName), "utf8");
