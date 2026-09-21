@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -358,6 +359,9 @@ function renderChrome({ depth, activeId, deals, main }) {
 </div>`;
 }
 
+// Impact.com Universal Tracking Tag (account snippet P-A7822267). Permanent, every page.
+const IMPACT_UTT = `<script type="text/javascript">(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A7822267-c904-4255-a7d2-efe7698726ea1.js','script','impactStat',document,window);impactStat('transformLinks');impactStat('trackImpression');</script>`;
+
 function pageShell({ title, description, canonical, robots = "index, follow", ogType = "website", depth, json, body }) {
   const blocks = json
     ? `\n<script type="application/ld+json">${jsonLd({ "@context": "https://schema.org", "@graph": json })}</script>`
@@ -389,6 +393,7 @@ ${canonical ? `<meta property="og:url" content="${esc(canonical)}">` : ""}
 <input class="nav-toggle" id="nav-toggle" type="checkbox">
 ${body}
 <script src="${href(depth, "js/nav.js")}"></script>
+${IMPACT_UTT}
 </body>
 </html>
 `;
@@ -629,7 +634,7 @@ function writeFile(rel, contents) {
 
 // TEMP AvantLink ownership verify app 1655057 — remove after verify
 const AVANTLINK_HOME_VERIFY = `<!-- TEMP AvantLink ownership verify app 1655057 — remove after verify -->
-<script type="text/javascript" src="https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=c3faa08455ca3fdfb5861ff2736b00d74d7f9664"></script>
+<script type="text/javascript" src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=c3faa08455ca3fdfb5861ff2736b00d74d7f9664"></script>
 `;
 
 function withAvantLinkHomeVerify(html) {
@@ -729,6 +734,7 @@ function build() {
   copyFile(path.join(rootDir, "src", "nav.js"), path.join("js", "nav.js"));
   copyFile(path.join(rootDir, "public", "favicon.svg"), "favicon.svg");
   copyFile(path.join(rootDir, "public", "_headers"), "_headers");
+  copyFile(path.join(rootDir, "public", "avantlink_confirmation.txt"), "avantlink_confirmation.txt");
 
   const fontDir = path.join(rootDir, "src", "fonts");
   for (const name of fs.readdirSync(fontDir)) {
@@ -743,9 +749,40 @@ function build() {
   if (!home.includes(AVANTLINK_HOME_VERIFY.trim())) {
     throw new Error("Home page is missing temporary AvantLink ownership verification");
   }
+  if (!home.includes('src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=c3faa08455ca3fdfb5861ff2736b00d74d7f9664"')) {
+    throw new Error("AvantLink verify script must use the official http:// src");
+  }
+  if (home.includes("https://classic.avantlink.com/affiliate_app_confirm.php")) {
+    throw new Error("AvantLink verify script must not use https:// — the matcher looks for http://");
+  }
   const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
-  if (guns.includes("avantlink.com") || guns.includes("1655057")) {
+  const sampleDeal = fs.readFileSync(path.join(distDir, "deals", deals[0].slug, "index.html"), "utf8");
+  const impactCount = (html) => html.split(IMPACT_UTT).length - 1;
+  if (impactCount(home) !== 1 || impactCount(guns) !== 1 || impactCount(sampleDeal) !== 1) {
+    throw new Error("Impact tracking tag must appear exactly once in the shared page shell");
+  }
+  if (guns.includes("avantlink.com") || guns.includes("1655057") || sampleDeal.includes("avantlink.com")) {
     throw new Error("AvantLink verification must be homepage only");
+  }
+  const confirmName = "avantlink_confirmation.txt";
+  const confirmSrc = fs.readFileSync(path.join(rootDir, "public", confirmName), "utf8");
+  const confirmDist = fs.readFileSync(path.join(distDir, confirmName), "utf8");
+  if (confirmSrc !== confirmDist || !confirmDist.includes("<Mode>Verify-File</Mode>")) {
+    throw new Error("avantlink_confirmation.txt must be copied unchanged to the site root");
+  }
+  const headers = fs.readFileSync(path.join(distDir, "_headers"), "utf8");
+  const impactSource = IMPACT_UTT.match(/^<script type="text\/javascript">([\s\S]*)<\/script>$/);
+  if (!impactSource) throw new Error("Impact tag must stay a single inline script");
+  const impactHash = `'sha256-${crypto.createHash("sha256").update(impactSource[1]).digest("base64")}'`;
+  for (const token of [
+    "http://classic.avantlink.com",
+    "https://classic.avantlink.com",
+    "https://utt.impactcdn.com",
+    "https://*.impactradius.com",
+    "https://*.impact.com",
+    impactHash,
+  ]) {
+    if (!headers.includes(token)) throw new Error(`Content-Security-Policy is missing ${token}`);
   }
   if (!home.includes('data-tag="used"') || !home.includes('data-tag="police-trade-in"') || !home.includes('class="tag"')) {
     throw new Error("Home page is missing condition tag filters or badges");
