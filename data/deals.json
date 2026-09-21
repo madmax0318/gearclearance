@@ -7,7 +7,7 @@
     "price_was": 89.99,
     "category": "ammo",
     "why": "About 26¢ a round for brass-case FMJ. Big-box counters have been closer to 36¢ on the same 250-round pack.",
-    "url": "https://example.com/out/federal-american-eagle-9mm-250",
+    "url": "https://www.targetsportsusa.com/federal-american-eagle-9mm-ammo-115-grain-ammo-full-metal-jacket-ae9dp-p-660.aspx",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -19,7 +19,7 @@
     "price_was": 299.99,
     "category": "household",
     "why": "Enough stored power for phones, a radio, and a small fan. Anker’s own price has been sitting near $280.",
-    "url": "https://example.com/out/anker-521-power-station",
+    "url": "https://www.ankersolix.com/ca/products/521",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -31,7 +31,7 @@
     "price_was": 649.0,
     "category": "guns",
     "why": "Department trade-in Gen5 MOS pistols still list nearer $620 when sold as new. A used police trade-in under $500 is the one that sells through.",
-    "url": "https://example.com/out/glock-19-gen5-mos",
+    "url": "https://palmettostatearmory.com/glock-19-mos-gen-5-pistol-with-front-serrations-black-pa195s203m.html",
     "tags": ["police-trade-in", "used"],
     "curated": true,
     "posted": "2026-09-20"
@@ -44,7 +44,7 @@
     "price_was": 139.99,
     "category": "accessories",
     "why": "The default 1,000-lumen weapon light on a lot of builds. A used HL-X under $90 sits below the usual street price for a new one.",
-    "url": "https://example.com/out/streamlight-protac-hl-x",
+    "url": "https://www.midwayusa.com/product/1018571930",
     "tags": ["used"],
     "curated": true,
     "posted": "2026-09-20"
@@ -57,7 +57,7 @@
     "price_was": 229.99,
     "category": "optics",
     "why": "Agency trade-in of the usual first red dot. It has not spent much time this far under $200.",
-    "url": "https://example.com/out/holosun-hs403b",
+    "url": "https://www.primaryarms.com/search?q=Holosun+HS403B",
     "tags": ["police-trade-in"],
     "curated": true,
     "posted": "2026-09-19"
@@ -70,7 +70,7 @@
     "price_was": 19.95,
     "category": "survival",
     "why": "A small dollar cut on a filter whose shelf price barely moves. Easy spare for a glovebox or day pack.",
-    "url": "https://example.com/out/lifestraw-personal",
+    "url": "https://www.rei.com/b/lifestraw/c/straw-water-filters",
     "curated": false,
     "posted": "2026-09-19"
   },
@@ -82,7 +82,7 @@
     "price_was": 184.99,
     "category": "food-storage",
     "why": "A one-person 30-day bucket under $120. The same kit has been listing closer to $170.",
-    "url": "https://example.com/out/augason-farms-30-day",
+    "url": "https://www.beprepared.com/products/emergency-food-supply-30-days",
     "curated": true,
     "posted": "2026-09-18"
   },
@@ -94,7 +94,7 @@
     "price_was": 32.99,
     "category": "ammo",
     "why": "Defensive 9mm rarely prints under $1 a round. This box does, and it is not tied to a bulk-club login.",
-    "url": "https://example.com/out/hornady-critical-defense-9mm-25",
+    "url": "https://www.midwayusa.com/product/100157068",
     "curated": false,
     "posted": "2026-09-18"
   },
@@ -106,7 +106,7 @@
     "price_was": 309.99,
     "category": "guns",
     "why": "Used wood-stock carbine, not a rebate bundle. Everyday new pricing has been stuck just over $300.",
-    "url": "https://example.com/out/ruger-10-22-carbine",
+    "url": "https://www.sportsmans.com/shooting-gear-gun-supplies/rifles/ruger-1022-carbine-22-long-rifle-satin-blackhardwood-semi-automatic-rifle-185in/p/301829",
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-17"
@@ -119,7 +119,7 @@
     "price_was": 49.9,
     "category": "survival",
     "why": "Two heat-reflective bivvies for the price one usually costs. Worth a slot in a vehicle kit before cold weather.",
-    "url": "https://example.com/out/sol-emergency-bivvy-2-pack",
+    "url": "https://www.rei.com/product/813511/sol-emergency-bivy",
     "curated": true,
     "posted": "2026-09-17"
   },
@@ -131,7 +131,7 @@
     "price_was": 149.95,
     "category": "accessories",
     "why": "Ten magazines at about $10 each. Sold one at a time, the same Gen M3 still rings up near $15.",
-    "url": "https://example.com/out/magpul-pmag-30-gen-m3-10-pack",
+    "url": "https://www.brownells.com/gun-parts/magazines/rifle-magazines-parts/ar-15-30rd-pmag-gen-m3-magazine-2235.56/",
     "curated": false,
     "posted": "2026-09-16"
   },
@@ -143,7 +143,7 @@
     "price_was": 849.99,
     "category": "guns",
     "why": "Sport III rifles have been sticky around $800 new. This one is a police trade-in, not a blemished new gun.",
-    "url": "https://example.com/out/smith-wesson-mp15-sport-iii",
+    "url": "https://grabagun.com/smith-and-wesson-m-p15-sport-iii-5-56-223-rem-16-barrel-30-rounds.html",
     "tags": ["police-trade-in"],
     "curated": false,
     "posted": "2026-09-15"
@@ -156,7 +156,7 @@
     "price_was": 299.99,
     "category": "optics",
     "why": "A third off a Diamondback that still carries Vortex VIP warranty. MAP has been keeping street prices nearer $260.",
-    "url": "https://example.com/out/vortex-diamondback-4-12x40",
+    "url": "https://www.opticsplanet.com/vortex-riflescopes-dbk-m-04p.html",
     "curated": false,
     "posted": "2026-09-14"
   },
@@ -168,7 +168,7 @@
     "price_was": 114.99,
     "category": "food-storage",
     "why": "Just over $3 a serving for freeze-dried entrees with a long shelf life. Recent club pricing has been nearer $4.50.",
-    "url": "https://example.com/out/mountain-house-classic-bucket",
+    "url": "https://www.walmart.com/ip/Mountain-House-Freeze-Dried-Emergency-Food-Pouche-12-Count/412259451",
     "curated": false,
     "posted": "2026-09-13"
   },
@@ -180,7 +180,7 @@
     "price_was": 124.99,
     "category": "ammo",
     "why": "About 59¢ a round for M193-style brass. Recent case splits have been closer to 75¢.",
-    "url": "https://example.com/out/winchester-556-m193-150",
+    "url": "https://www.brownells.com/ammunition/rifle-ammunition/usa-white-box-5.56mm-rifle-ammo/",
     "curated": false,
     "posted": "2026-09-12"
   },
@@ -192,7 +192,7 @@
     "price_was": 189.99,
     "category": "optics",
     "why": "New Romeo5 street price has settled around $160. This used unit is under that, and it is not a parts gun.",
-    "url": "https://example.com/out/sig-romeo5",
+    "url": "https://palmettostatearmory.com/sig-sauer-romeo5-1x20mm-red-dot-sight-black-r52001.html",
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-11"
@@ -205,7 +205,7 @@
     "price_was": 36.0,
     "category": "survival",
     "why": "A compact kit for blisters, cuts, and the small stuff. Replacing the contents one packet at a time costs more than the kit.",
-    "url": "https://example.com/out/adventure-medical-sportsman-200",
+    "url": "https://www.rei.com/b/adventure-medical-kits/c/first-aid-kits",
     "curated": false,
     "posted": "2026-09-10"
   },
@@ -217,7 +217,7 @@
     "price_was": 65.0,
     "category": "accessories",
     "why": "Padded Vickers slings rarely print under $55. This is the standard black sling, not a closeout colorway.",
-    "url": "https://example.com/out/blue-force-gear-vickers-sling",
+    "url": "https://www.primaryarms.com/blue-force-gear-vickers-padded-push-button-sling-black",
     "curated": false,
     "posted": "2026-09-09"
   },
@@ -229,7 +229,7 @@
     "price_was": 49.95,
     "category": "food-storage",
     "why": "Bags and absorbers in one carton for dry staples. Buying the two pieces separately has been landing near $50.",
-    "url": "https://example.com/out/packfreshusa-mylar-gallon-50",
+    "url": "https://packfreshusa.com/gallon-7-mil-premium-century-mylar-bags-and-oxygen-absorbers/",
     "curated": false,
     "posted": "2026-09-08"
   },
@@ -241,7 +241,7 @@
     "price_was": 99.0,
     "category": "household",
     "why": "Battery, charger, and a basic household drill at 40% off. It is a home kit, not a jobsite driver.",
-    "url": "https://example.com/out/black-decker-20v-drill-kit",
+    "url": "https://www.homedepot.com/p/BLACK-DECKER-20V-MAX-Lithium-Ion-Cordless-3-8-in-Drill-Driver-with-Battery-1-5Ah-and-Charger-LDX120C/203124591",
     "curated": false,
     "posted": "2026-09-06"
   },
@@ -253,7 +253,7 @@
     "price_was": 549.0,
     "category": "gaming",
     "why": "OLED 512GB decks rarely move off the $549 shelf price. A hundred off is the cut that shows up in the gaming aisle.",
-    "url": "https://example.com/out/steam-deck-oled-512",
+    "url": "https://store.steampowered.com/steamdeck/",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -265,7 +265,7 @@
     "price_was": 159.99,
     "category": "gaming",
     "why": "The wireless G502 X has been holding near $140. This used unit is under $90, not a refurbished mystery SKU.",
-    "url": "https://example.com/out/logitech-g502-x-lightspeed",
+    "url": "https://www.logitechg.com/en-us/shop/p/g502-x-wireless-lightforce",
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-18"
@@ -278,7 +278,7 @@
     "price_was": 959.0,
     "category": "drones",
     "why": "Drone-only Mini 4 Pro, no Fly More kit. Street price on the bare aircraft has been closer to $900.",
-    "url": "https://example.com/out/dji-mini-4-pro",
+    "url": "https://www.bhphotovideo.com/c/product/1784782-REG/dji_cp_ma_00000731_01_mini_4_pro_drone.html",
     "curated": true,
     "posted": "2026-09-20"
   },
@@ -290,7 +290,7 @@
     "price_was": 199.0,
     "category": "drones",
     "why": "Used Neo, not the Motion Fly More bundle. New ones have been sitting at $199.",
-    "url": "https://example.com/out/dji-neo",
+    "url": "https://www.adorama.com/dji-neo-drone-no-remote-4k-camera-base-kit/p/djicpfp18401",
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-14"
