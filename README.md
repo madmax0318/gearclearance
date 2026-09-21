@@ -59,6 +59,8 @@ Left sidebar, in order:
 6. Food storage — `/food-storage/`
 7. Survival — `/survival/`
 8. Household goods — `/household/`
+9. Gaming — `/gaming/`
+10. Drones — `/drones/`
 
 **Curated** sits on a lower rail with a badge. `/curated/` is a placeholder for hand-picked tips.
 
@@ -68,7 +70,7 @@ Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD.
 
 ## Sample data
 
-`data/deals.json` holds 20 fictional deals covering all seven categories. Affiliate URLs are `https://example.com/out/...` and render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
+`data/deals.json` holds 24 fictional deals covering all nine aisles. Affiliate URLs are `https://example.com/out/...` and render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
 
 A deal may include an optional `tags` array of condition or source ids. Tags are not sidebar aisles. Known tags:
 

@@ -244,5 +244,55 @@
     "url": "https://example.com/out/black-decker-20v-drill-kit",
     "curated": false,
     "posted": "2026-09-06"
+  },
+  {
+    "slug": "steam-deck-oled-512",
+    "title": "Steam Deck OLED 512GB",
+    "merchant": "Steam",
+    "price_now": 449.0,
+    "price_was": 549.0,
+    "category": "gaming",
+    "why": "OLED 512GB decks rarely move off the $549 shelf price. A hundred off is the cut that shows up in the gaming aisle.",
+    "url": "https://example.com/out/steam-deck-oled-512",
+    "curated": true,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "logitech-g502-x-lightspeed",
+    "title": "Logitech G502 X Lightspeed",
+    "merchant": "Logitech",
+    "price_now": 89.99,
+    "price_was": 159.99,
+    "category": "gaming",
+    "why": "The wireless G502 X has been holding near $140. This used unit is under $90, not a refurbished mystery SKU.",
+    "url": "https://example.com/out/logitech-g502-x-lightspeed",
+    "tags": ["used"],
+    "curated": false,
+    "posted": "2026-09-18"
+  },
+  {
+    "slug": "dji-mini-4-pro",
+    "title": "DJI Mini 4 Pro (drone only)",
+    "merchant": "B&H",
+    "price_now": 759.0,
+    "price_was": 959.0,
+    "category": "drones",
+    "why": "Drone-only Mini 4 Pro, no Fly More kit. Street price on the bare aircraft has been closer to $900.",
+    "url": "https://example.com/out/dji-mini-4-pro",
+    "curated": true,
+    "posted": "2026-09-20"
+  },
+  {
+    "slug": "dji-neo",
+    "title": "DJI Neo",
+    "merchant": "Adorama",
+    "price_now": 149.0,
+    "price_was": 199.0,
+    "category": "drones",
+    "why": "Used Neo, not the Motion Fly More bundle. New ones have been sitting at $199.",
+    "url": "https://example.com/out/dji-neo",
+    "tags": ["used"],
+    "curated": false,
+    "posted": "2026-09-14"
   }
 ]

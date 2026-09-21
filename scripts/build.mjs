@@ -73,6 +73,24 @@ const CATEGORIES = [
     description:
       "Sample household clearance: portable power and a basic drill kit, using the same card layout as the gear aisles.",
   },
+  {
+    id: "gaming",
+    slug: "gaming",
+    name: "Gaming",
+    h1: "Gaming deals",
+    eyebrow: "Gaming",
+    description:
+      "Sample markdowns on handhelds and mice. Same card layout as the other aisles, including any condition tags.",
+  },
+  {
+    id: "drones",
+    slug: "drones",
+    name: "Drones",
+    h1: "Drone deals",
+    eyebrow: "Drones",
+    description:
+      "Sample drone deals with merchant, was/now price, and a short note on why the markdown is listed.",
+  },
 ];
 
 const HOME = {
@@ -81,8 +99,8 @@ const HOME = {
   eyebrow: "Latest across every aisle",
   title: "Latest deals | The Stash Deals",
   description:
-    "Grow your stash without shrinking your wallet. Sample deals on guns, ammo, optics, accessories, food storage, survival, and household goods.",
-  lede: "Grow your stash without shrinking your wallet. Newest sample deals across guns, ammo, optics, accessories, food storage, survival, and household goods. Open a category to narrow the board.",
+    "Grow your stash without shrinking your wallet. Sample deals on guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones.",
+  lede: "Grow your stash without shrinking your wallet. Newest sample deals across guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
 };
 
 const CURATED = {
@@ -179,8 +197,8 @@ function byNewest(a, b) {
 function loadDeals() {
   const file = path.join(rootDir, "data", "deals.json");
   const deals = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (!Array.isArray(deals) || deals.length < 12 || deals.length > 20) {
-    throw new Error(`Expected 12–20 deals, found ${deals.length}`);
+  if (!Array.isArray(deals) || deals.length < 12 || deals.length > 30) {
+    throw new Error(`Expected 12–30 deals, found ${deals.length}`);
   }
   const slugs = new Set();
   for (const deal of deals) {
@@ -713,6 +731,14 @@ function build() {
   }
   if (home.includes("Used</span></a>") || /nav-link[^>]*>[^<]*Used/.test(home)) {
     throw new Error("Condition tags must not be sidebar categories");
+  }
+  const nav = home.slice(home.indexOf('aria-label="Categories"'), home.indexOf('class="rail"'));
+  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
+  let cursor = 0;
+  for (const label of aisleOrder) {
+    const at = nav.indexOf(`>${label}<`, cursor);
+    if (at < 0) throw new Error(`Sidebar missing ${label} in aisle order`);
+    cursor = at;
   }
   console.log(`Built ${htmlCount} HTML pages and ${deals.length} deals into dist/`);
 }
