@@ -1,2 +1,75 @@
-# gearclearance
-Gear Clearance — deals aggregator prototype (guns/ammo/optics/accessories/food storage/survival/household). Deploy: gearclearance.mcdaniel.fyi
+# Gear Clearance
+
+Static prototype of an affiliate deal aggregator. Cards link out to merchants. Gear Clearance is not the seller and not a federal firearms licensee (FFL).
+
+Host: [gearclearance.mcdaniel.fyi](https://gearclearance.mcdaniel.fyi) on Cloudflare Pages. The published site is the `dist/` folder from `npm run build`. No Node server, email ingest, scraper, or live affiliate API.
+
+## Local preview
+
+Requires Node 18 or newer.
+
+```bash
+npm run build
+npm run preview
+```
+
+Open http://localhost:4173
+
+`npm run preview` serves `dist/` and resolves category paths such as `/guns/` and `/ammo/`. After a build, `dist/index.html` also opens on its own and shows the sidebar, the latest deals, and the footer disclosure. Use the preview server for the category routes.
+
+## Cloudflare Pages
+
+1. Create a Pages project connected to this repository.
+2. Framework preset: None.
+3. Build command: `npm run build`
+4. Build output directory: `dist`
+5. Node.js version: 20 (or any 18+). No environment variables.
+
+The build writes HTML, CSS, a small menu script, fonts, `sitemap.xml`, `robots.txt`, and `_headers`. `_headers` sets baseline security headers (nosniff, frame denial, referrer policy, a self-only content security policy, and HSTS).
+
+### Custom domain
+
+Add `gearclearance.mcdaniel.fyi` as a custom domain on the Pages project.
+
+DNS for that hostname is a **CNAME**:
+
+| Name | Type | Target |
+| --- | --- | --- |
+| `gearclearance` | CNAME | the project's `*.pages.dev` hostname (shown in the Pages dashboard, for example `gear-clearance.pages.dev`) |
+
+If `mcdaniel.fyi` is already on Cloudflare DNS, adding the custom domain in Pages can create that CNAME for you. Leave the record proxied. Wait until the certificate is active, then open https://gearclearance.mcdaniel.fyi.
+
+This is a subdomain, so a CNAME is the right record. Do not move the zone apex for this prototype.
+
+## Information architecture
+
+Left sidebar, in order:
+
+1. Home — latest deals across every aisle
+2. Guns — `/guns/`
+3. Ammo — `/ammo/`
+4. Optics — `/optics/`
+5. Accessories — `/accessories/`
+6. Food storage — `/food-storage/`
+7. Survival — `/survival/`
+8. Household goods — `/household/`
+
+**Curated** sits on a lower rail with a badge. `/curated/` is a placeholder for hand-picked tips.
+
+On a narrow screen the same list is a drawer (the Menu control). It works without JavaScript; the small script only closes the drawer on Escape or after a tap.
+
+Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD. Listing pages are real HTML, not an empty app shell.
+
+## Sample data
+
+`data/deals.json` holds 20 fictional deals covering all seven categories. Affiliate URLs are `https://example.com/out/...` and render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
+
+The footer of every page includes the FTC affiliate disclosure.
+
+## Layout
+
+- `data/deals.json` — sample deals
+- `scripts/build.mjs` — writes `dist/`
+- `scripts/preview.mjs` — local static server
+- `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, OFL fonts
+- `public/_headers`, `public/favicon.svg` — copied into `dist/`

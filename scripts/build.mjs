@@ -1,0 +1,639 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const distDir = path.join(rootDir, "dist");
+const SITE = "https://gearclearance.mcdaniel.fyi";
+
+const CATEGORIES = [
+  {
+    id: "guns",
+    slug: "guns",
+    name: "Guns",
+    h1: "Gun deals",
+    eyebrow: "Guns",
+    description:
+      "Sample gun deals with merchant, was/now price, and why the markdown is listed. Gear Clearance only links out — we are not the seller and we are not an FFL.",
+  },
+  {
+    id: "ammo",
+    slug: "ammo",
+    name: "Ammo",
+    h1: "Ammo deals",
+    eyebrow: "Ammo",
+    description:
+      "Sample ammunition markdowns with round count in the title, a percent-off badge, and a short note on why the price is worth a look.",
+  },
+  {
+    id: "optics",
+    slug: "optics",
+    name: "Optics",
+    h1: "Optics deals",
+    eyebrow: "Optics",
+    description:
+      "Sample red dot and riflescope deals. Each card shows the merchant, the previous price, and whether the listing is new.",
+  },
+  {
+    id: "accessories",
+    slug: "accessories",
+    name: "Accessories",
+    h1: "Accessory deals",
+    eyebrow: "Accessories",
+    description:
+      "Sample deals on magazines, lights, and slings, with pack versus single pricing called out in the title.",
+  },
+  {
+    id: "food-storage",
+    slug: "food-storage",
+    name: "Food storage",
+    h1: "Food storage deals",
+    eyebrow: "Food storage",
+    description:
+      "Sample clearance prices on freeze-dried food and pantry supplies for longer-term storage.",
+  },
+  {
+    id: "survival",
+    slug: "survival",
+    name: "Survival",
+    h1: "Survival deals",
+    eyebrow: "Survival",
+    description:
+      "Sample deals on water, shelter, and a compact medical kit, with the old price beside the sale price.",
+  },
+  {
+    id: "household",
+    slug: "household",
+    name: "Household goods",
+    h1: "Household goods deals",
+    eyebrow: "Household goods",
+    description:
+      "Sample household clearance: portable power and a basic drill kit, using the same card layout as the gear aisles.",
+  },
+];
+
+const HOME = {
+  id: "home",
+  h1: "Latest deals",
+  eyebrow: "Latest across every aisle",
+  title: "Latest deals | Gear Clearance",
+  description:
+    "Gear Clearance lists sample markdowns on guns, ammo, optics, accessories, food storage, survival gear, and household goods. Outbound affiliate links only.",
+  lede: "Newest sample deals across guns, ammo, optics, accessories, food storage, survival, and household goods. Open a category to narrow the board.",
+};
+
+const CURATED = {
+  id: "curated",
+  slug: "curated",
+  h1: "Curated picks",
+  eyebrow: "Hand-picked tips",
+  title: "Curated picks | Gear Clearance",
+  description:
+    "A short rail of hand-picked sample deals. This curated section is an editorial placeholder, not an automated ranking.",
+  lede: "Deals a person flagged as worth a second look. This rail is a placeholder for editorial tips — nothing here is ranked by a formula.",
+};
+
+const DISCLOSURE =
+  "Gear Clearance is an affiliate deal aggregator. If you buy through a link on this site, we may earn a commission at no extra cost to you. We do not sell these products, we do not take payment, and we are not a federal firearms licensee (FFL). Every offer is an outbound link to another merchant. Prices, shipping, and availability can change — the merchant page is the offer that matters.";
+
+const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const dateFmt = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.2" y="1.2" width="29.6" height="29.6" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 23.2 16 8.2l8 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16" cy="17.2" r="2.3" fill="#e4b54a"/></svg>`;
+
+const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3.2 3.2h5.1v1.4H4.6v6.8h6.8V7.7h1.4v5.1H3.2V3.2z"/><path fill="currentColor" d="M8.2 2.4h5.4V7.8h-1.4V4.8L7.4 9.6 6.4 8.6l4.8-4.8H8.2V2.4z"/></svg>`;
+
+function esc(value) {
+  return String(value).replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
+function jsonLd(data) {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+function money(amount) {
+  return usd.format(amount);
+}
+
+function percentOff(now, was) {
+  return Math.round((1 - now / was) * 100);
+}
+
+function formatDate(iso) {
+  return dateFmt.format(new Date(`${iso}T00:00:00Z`));
+}
+
+function plusDays(iso, days) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function clip(text, max = 160) {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1).replace(/\s+\S*$/, "")}…`;
+}
+
+function href(depth, target) {
+  const prefix = "../".repeat(depth);
+  if (!target) return prefix || "./";
+  return `${prefix}${target}`;
+}
+
+function categoryById(id) {
+  return CATEGORIES.find((category) => category.id === id);
+}
+
+function byNewest(a, b) {
+  return b.posted.localeCompare(a.posted) || a.title.localeCompare(b.title);
+}
+
+function loadDeals() {
+  const file = path.join(rootDir, "data", "deals.json");
+  const deals = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!Array.isArray(deals) || deals.length < 12 || deals.length > 20) {
+    throw new Error(`Expected 12–20 deals, found ${deals.length}`);
+  }
+  const slugs = new Set();
+  for (const deal of deals) {
+    for (const key of ["slug", "title", "merchant", "why", "url", "category", "posted"]) {
+      if (deal[key] === undefined || deal[key] === "") throw new Error(`Missing ${key} on a deal`);
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(deal.slug)) throw new Error(`Bad slug: ${deal.slug}`);
+    if (slugs.has(deal.slug)) throw new Error(`Duplicate slug: ${deal.slug}`);
+    slugs.add(deal.slug);
+    if (!categoryById(deal.category)) throw new Error(`Unknown category ${deal.category}`);
+    if (typeof deal.price_now !== "number" || typeof deal.price_was !== "number") {
+      throw new Error(`Prices must be numbers on ${deal.slug}`);
+    }
+    if (!(deal.price_was > deal.price_now && deal.price_now > 0)) {
+      throw new Error(`Price must drop on ${deal.slug}`);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(deal.posted) || Number.isNaN(Date.parse(`${deal.posted}T00:00:00Z`))) {
+      throw new Error(`Bad posted date on ${deal.slug}`);
+    }
+    let parsed;
+    try {
+      parsed = new URL(deal.url);
+    } catch {
+      throw new Error(`Bad url on ${deal.slug}`);
+    }
+    if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
+    if (typeof deal.curated !== "boolean") throw new Error(`curated must be boolean on ${deal.slug}`);
+  }
+  for (const category of CATEGORIES) {
+    if (!deals.some((deal) => deal.category === category.id)) {
+      throw new Error(`No deals in ${category.id}`);
+    }
+  }
+  return deals.sort(byNewest);
+}
+
+function renderCard(deal, depth, heading) {
+  const category = categoryById(deal.category);
+  const pct = percentOff(deal.price_now, deal.price_was);
+  const tag = heading === "h3" ? "h3" : "h2";
+  return `<article class="card">
+  <div class="card-top">
+    <a class="cat-link" href="${href(depth, `${category.slug}/`)}">${esc(category.name)}</a>
+    ${deal.curated ? '<span class="pill">Curated</span>' : ""}
+  </div>
+  <${tag} class="card-title"><a href="${href(depth, `deals/${deal.slug}/`)}">${esc(deal.title)}</a></${tag}>
+  <p class="merchant">${esc(deal.merchant)} · <time datetime="${esc(deal.posted)}">Listed ${esc(formatDate(deal.posted))}</time></p>
+  <div class="price-row">
+    <p class="now"><span class="sr-only">Price now </span>${esc(money(deal.price_now))}</p>
+    <p class="was"><span class="sr-only">Was </span><s>${esc(money(deal.price_was))}</s></p>
+    <p class="off">${pct}% off</p>
+  </div>
+  <p class="why">${esc(deal.why)}</p>
+  <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
+</article>`;
+}
+
+function renderSidebar(activeId, depth, deals) {
+  const homeCount = deals.length;
+  const curatedCount = deals.filter((deal) => deal.curated).length;
+  const links = [
+    { id: "home", href: href(depth, ""), label: "Home", count: homeCount },
+    ...CATEGORIES.map((category) => ({
+      id: category.id,
+      href: href(depth, `${category.slug}/`),
+      label: category.name,
+      count: deals.filter((deal) => deal.category === category.id).length,
+    })),
+  ];
+  const items = links
+    .map((link) => {
+      const current = link.id === activeId ? ' aria-current="page"' : "";
+      return `<a class="nav-link" href="${link.href}"${current}><span>${esc(link.label)}</span><span class="count">${link.count}</span></a>`;
+    })
+    .join("\n");
+  const curatedCurrent = activeId === "curated" ? ' aria-current="page"' : "";
+  return `<aside id="sidebar" class="sidebar">
+  <a class="brand" href="${href(depth, "")}">
+    ${MARK}
+    <span class="brand-text">
+      <span class="wordmark">Gear Clearance</span>
+      <span class="brand-tag">Outbound deal alerts</span>
+    </span>
+  </a>
+  <nav class="nav-list" aria-label="Categories">
+    ${items}
+  </nav>
+  <div class="rail">
+    <p class="rail-kicker">Editor's rail</p>
+    <a class="nav-link" href="${href(depth, "curated/")}"${curatedCurrent}><span class="pill">Curated</span><span class="count">${curatedCount}</span></a>
+    <p class="rail-note">Hand-picked tips. Placeholder for notes a person would add later.</p>
+  </div>
+</aside>`;
+}
+
+function renderChrome({ depth, activeId, deals, main }) {
+  return `<div class="app">
+  <header class="topbar">
+    <label class="menu-btn" for="nav-toggle"><span class="menu-bars" aria-hidden="true"></span>Menu</label>
+    <a class="topbar-mark" href="${href(depth, "")}">Gear Clearance</a>
+  </header>
+  <label class="backdrop" for="nav-toggle"><span class="sr-only">Close menu</span></label>
+  ${renderSidebar(activeId, depth, deals)}
+  <div class="main-col">
+    <main id="content">${main}</main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p class="disclosure"><strong>Affiliate disclosure.</strong> ${esc(DISCLOSURE)}</p>
+        <p class="legal">© 2026 Gear Clearance. Sample prices for this static prototype. Not a live feed.</p>
+      </div>
+    </footer>
+  </div>
+</div>`;
+}
+
+function pageShell({ title, description, canonical, robots = "index, follow", ogType = "website", depth, json, body }) {
+  const blocks = json
+    ? `\n<script type="application/ld+json">${jsonLd({ "@context": "https://schema.org", "@graph": json })}</script>`
+    : "";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(description)}">
+${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}
+<meta name="robots" content="${esc(robots)}">
+<meta name="theme-color" content="#0e1210">
+<meta property="og:site_name" content="Gear Clearance">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(description)}">
+${canonical ? `<meta property="og:url" content="${esc(canonical)}">` : ""}
+<meta property="og:type" content="${esc(ogType)}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(description)}">
+<link rel="icon" href="${href(depth, "favicon.svg")}" type="image/svg+xml">
+<link rel="stylesheet" href="${href(depth, "css/site.css")}">${blocks}
+</head>
+<body>
+<a class="skip" href="#content">Skip to deals</a>
+<input class="nav-toggle" id="nav-toggle" type="checkbox">
+${body}
+<script src="${href(depth, "js/nav.js")}"></script>
+</body>
+</html>
+`;
+}
+
+function websiteNode() {
+  return {
+    "@type": "WebSite",
+    "@id": `${SITE}/#website`,
+    name: "Gear Clearance",
+    url: `${SITE}/`,
+    description: HOME.description,
+  };
+}
+
+function breadcrumbNode(crumbs) {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.url,
+    })),
+  };
+}
+
+function itemListNode(deals) {
+  return {
+    "@type": "ItemList",
+    itemListElement: deals.map((deal, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: deal.title,
+      url: `${SITE}/deals/${deal.slug}/`,
+    })),
+  };
+}
+
+function listingPage({ activeId, depth, canonicalPath, title, description, h1, eyebrow, lede, deals, allDeals }) {
+  const cards = deals.map((deal) => renderCard(deal, depth, "h2")).join("\n");
+  const noun = deals.length === 1 ? "deal" : "deals";
+  const main = `
+<div class="wrap">
+  <header class="page-head">
+    <p class="eyebrow">${esc(eyebrow)}</p>
+    <h1>${esc(h1)}</h1>
+    <p class="lede">${esc(lede)}</p>
+    <p class="result-count">${deals.length} ${noun} · newest first</p>
+  </header>
+  ${
+    deals.length
+      ? `<section class="deal-grid" aria-label="Deals">\n${cards}\n</section>`
+      : `<p class="empty">No sample deals in this aisle yet.</p>`
+  }
+</div>`;
+  const crumbs =
+    activeId === "home"
+      ? []
+      : [
+          { name: "Home", url: `${SITE}/` },
+          { name: h1, url: `${SITE}${canonicalPath}` },
+        ];
+  const graph = [
+    websiteNode(),
+    {
+      "@type": "CollectionPage",
+      "@id": `${SITE}${canonicalPath}#page`,
+      url: `${SITE}${canonicalPath}`,
+      name: h1,
+      description,
+      isPartOf: { "@id": `${SITE}/#website` },
+      mainEntity: itemListNode(deals),
+    },
+  ];
+  if (crumbs.length) graph.push(breadcrumbNode(crumbs));
+  return pageShell({
+    title,
+    description,
+    canonical: `${SITE}${canonicalPath}`,
+    depth,
+    json: graph,
+    body: renderChrome({ depth, activeId, deals: allDeals, main }),
+  });
+}
+
+function dealPage(deal, allDeals) {
+  const category = categoryById(deal.category);
+  const depth = 2;
+  const canonical = `${SITE}/deals/${deal.slug}/`;
+  const pct = percentOff(deal.price_now, deal.price_was);
+  const description = clip(
+    `${deal.title} is ${money(deal.price_now)} at ${deal.merchant} (was ${money(deal.price_was)}, ${pct}% off). ${deal.why}`,
+  );
+  const title = `${deal.title} — ${money(deal.price_now)} | Gear Clearance`;
+  const related = allDeals.filter((item) => item.category === deal.category && item.slug !== deal.slug).slice(0, 3);
+  const ffl =
+    deal.category === "guns"
+      ? `<p class="fine-note">Gear Clearance does not sell this firearm and is not an FFL. Checkout and any transfer happen at the merchant.</p>`
+      : "";
+  const relatedHtml = related.length
+    ? `<section class="related" aria-labelledby="related-heading">
+  <h2 id="related-heading">More ${esc(category.name.toLowerCase())} deals</h2>
+  <div class="deal-grid">
+    ${related.map((item) => renderCard(item, depth, "h3")).join("\n")}
+  </div>
+</section>`
+    : "";
+  const main = `
+<div class="wrap">
+  <nav aria-label="Breadcrumb">
+    <ol class="crumbs">
+      <li><a href="${href(depth, "")}">Home</a></li>
+      <li><a href="${href(depth, `${category.slug}/`)}">${esc(category.name)}</a></li>
+      <li>${esc(deal.title)}</li>
+    </ol>
+  </nav>
+  <article class="deal-hero">
+    <div class="deal-copy">
+      <p class="eyebrow">${esc(category.name)}${deal.curated ? " · Curated" : ""}</p>
+      <h1>${esc(deal.title)}</h1>
+      <p class="why">${esc(deal.why)}</p>
+    </div>
+    <div class="buy-box">
+      <p class="merchant">${esc(deal.merchant)} · <time datetime="${esc(deal.posted)}">Listed ${esc(formatDate(deal.posted))}</time></p>
+      <div class="price-row">
+        <p class="now"><span class="sr-only">Price now </span>${esc(money(deal.price_now))}</p>
+        <p class="was"><span class="sr-only">Was </span><s>${esc(money(deal.price_was))}</s></p>
+        <p class="off">${pct}% off</p>
+      </div>
+      <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
+      <p class="fine-note">Sample price for this prototype. Confirm it on the merchant site. The button leaves Gear Clearance.</p>
+      ${ffl}
+    </div>
+  </article>
+  ${relatedHtml}
+</div>`;
+  const graph = [
+    websiteNode(),
+    {
+      "@type": "Product",
+      "@id": `${canonical}#product`,
+      name: deal.title,
+      description: deal.why,
+      category: category.name,
+      mainEntityOfPage: canonical,
+      offers: {
+        "@type": "Offer",
+        url: deal.url,
+        priceCurrency: "USD",
+        price: deal.price_now.toFixed(2),
+        priceValidUntil: plusDays(deal.posted, 30),
+        availability: "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
+        seller: { "@type": "Organization", name: deal.merchant },
+      },
+    },
+    breadcrumbNode([
+      { name: "Home", url: `${SITE}/` },
+      { name: category.name, url: `${SITE}/${category.slug}/` },
+      { name: deal.title, url: canonical },
+    ]),
+  ];
+  return pageShell({
+    title,
+    description,
+    canonical,
+    ogType: "product",
+    depth,
+    json: graph,
+    body: renderChrome({ depth, activeId: category.id, deals: allDeals, main }),
+  });
+}
+
+function notFoundPage(deals) {
+  const main = `
+<div class="wrap">
+  <header class="page-head">
+    <p class="eyebrow">Missing page</p>
+    <h1>That page is not on the board</h1>
+    <p class="lede">The link does not match a category or a sample deal. Head back to the latest list.</p>
+    <p class="result-count"><a href="./">Latest deals</a></p>
+  </header>
+</div>`;
+  return pageShell({
+    title: "Page not found | Gear Clearance",
+    description: "That Gear Clearance page does not exist.",
+    robots: "noindex, follow",
+    depth: 0,
+    body: renderChrome({ depth: 0, activeId: "", deals, main }),
+  });
+}
+
+function sitemap(entries) {
+  const urls = entries
+    .map(
+      (entry) => `  <url>
+    <loc>${entry.loc}</loc>
+    <lastmod>${entry.lastmod}</lastmod>
+  </url>`,
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`;
+}
+
+function latestDate(deals) {
+  return deals.map((deal) => deal.posted).sort().at(-1);
+}
+
+function writeFile(rel, contents) {
+  const dest = path.join(distDir, rel);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, contents);
+}
+
+function copyFile(from, rel) {
+  const dest = path.join(distDir, rel);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(from, dest);
+}
+
+function build() {
+  const deals = loadDeals();
+  fs.rmSync(distDir, { recursive: true, force: true });
+  fs.mkdirSync(distDir, { recursive: true });
+
+  const sitemapEntries = [{ loc: `${SITE}/`, lastmod: latestDate(deals) }];
+
+  writeFile(
+    "index.html",
+    listingPage({
+      activeId: "home",
+      depth: 0,
+      canonicalPath: "/",
+      title: HOME.title,
+      description: HOME.description,
+      h1: HOME.h1,
+      eyebrow: HOME.eyebrow,
+      lede: HOME.lede,
+      deals,
+      allDeals: deals,
+    }),
+  );
+
+  for (const category of CATEGORIES) {
+    const inCategory = deals.filter((deal) => deal.category === category.id);
+    writeFile(
+      path.join(category.slug, "index.html"),
+      listingPage({
+        activeId: category.id,
+        depth: 1,
+        canonicalPath: `/${category.slug}/`,
+        title: `${category.h1} | Gear Clearance`,
+        description: category.description,
+        h1: category.h1,
+        eyebrow: category.eyebrow,
+        lede: category.description,
+        deals: inCategory,
+        allDeals: deals,
+      }),
+    );
+    sitemapEntries.push({
+      loc: `${SITE}/${category.slug}/`,
+      lastmod: latestDate(inCategory),
+    });
+  }
+
+  const curated = deals.filter((deal) => deal.curated);
+  writeFile(
+    path.join("curated", "index.html"),
+    listingPage({
+      activeId: "curated",
+      depth: 1,
+      canonicalPath: "/curated/",
+      title: CURATED.title,
+      description: CURATED.description,
+      h1: CURATED.h1,
+      eyebrow: CURATED.eyebrow,
+      lede: CURATED.lede,
+      deals: curated,
+      allDeals: deals,
+    }),
+  );
+  sitemapEntries.push({ loc: `${SITE}/curated/`, lastmod: latestDate(curated) });
+
+  for (const deal of deals) {
+    writeFile(path.join("deals", deal.slug, "index.html"), dealPage(deal, deals));
+    sitemapEntries.push({ loc: `${SITE}/deals/${deal.slug}/`, lastmod: deal.posted });
+  }
+
+  writeFile("404.html", notFoundPage(deals));
+  writeFile("sitemap.xml", sitemap(sitemapEntries));
+  writeFile(
+    "robots.txt",
+    `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
+  );
+
+  copyFile(path.join(rootDir, "src", "site.css"), path.join("css", "site.css"));
+  copyFile(path.join(rootDir, "src", "nav.js"), path.join("js", "nav.js"));
+  copyFile(path.join(rootDir, "public", "favicon.svg"), "favicon.svg");
+  copyFile(path.join(rootDir, "public", "_headers"), "_headers");
+
+  const fontDir = path.join(rootDir, "src", "fonts");
+  for (const name of fs.readdirSync(fontDir)) {
+    copyFile(path.join(fontDir, name), path.join("fonts", name));
+  }
+
+  const htmlCount = sitemapEntries.length + 1;
+  const home = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
+  if (!home.includes("Affiliate disclosure") || !home.includes("Guns") || !home.includes('rel="sponsored noopener noreferrer"')) {
+    throw new Error("Home page is missing disclosure, navigation, or sponsored links");
+  }
+  console.log(`Built ${htmlCount} HTML pages and ${deals.length} deals into dist/`);
+}
+
+build();

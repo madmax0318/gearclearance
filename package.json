@@ -1,0 +1,12 @@
+{
+  "name": "gearclearance",
+  "private": true,
+  "description": "Gear Clearance — static affiliate deal aggregator prototype",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/preview.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
