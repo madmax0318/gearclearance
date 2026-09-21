@@ -89,4 +89,4 @@ The footer of every page includes the FTC affiliate disclosure.
 - `scripts/build.mjs` — writes `dist/`
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
-- `public/_headers`, `public/favicon.svg` — copied into `dist/`
+- `public/_headers`, `public/favicon.svg`, `public/brand/stash-deals-logo.jpg` — copied into `dist/`
