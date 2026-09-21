@@ -134,6 +134,7 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
 });
 
 const LOGO = "brand/stash-deals-logo.jpg";
+const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.2" y="1.2" width="29.6" height="29.6" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 23.2 16 8.2l8 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16" cy="17.2" r="2.3" fill="#e0a82e"/></svg>`;
 
 const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3.2 3.2h5.1v1.4H4.6v6.8h6.8V7.7h1.4v5.1H3.2V3.2z"/><path fill="currentColor" d="M8.2 2.4h5.4V7.8h-1.4V4.8L7.4 9.6 6.4 8.6l4.8-4.8H8.2V2.4z"/></svg>`;
 
@@ -322,9 +323,9 @@ function renderSidebar(activeId, depth, deals) {
   const curatedCurrent = activeId === "curated" ? ' aria-current="page"' : "";
   return `<aside id="sidebar" class="sidebar">
   <a class="brand" href="${href(depth, "")}">
-    <img class="brand-logo" src="${href(depth, LOGO)}" width="1152" height="1728" alt="${esc(SITE_NAME)}">
+    ${MARK}
     <span class="brand-text">
-      <span class="wordmark sr-only">${esc(SITE_NAME)}</span>
+      <span class="wordmark">${SITE_NAME}</span>
       <span class="brand-tag">${esc(TAGLINE)}</span>
     </span>
   </a>
@@ -343,7 +344,7 @@ function renderChrome({ depth, activeId, deals, main }) {
   return `<div class="app">
   <header class="topbar">
     <label class="menu-btn" for="nav-toggle"><span class="menu-bars" aria-hidden="true"></span>Menu</label>
-    <a class="topbar-mark" href="${href(depth, "")}"><img class="topbar-logo" src="${href(depth, LOGO)}" width="1152" height="1728" alt="${esc(SITE_NAME)}"></a>
+    <a class="topbar-mark" href="${href(depth, "")}">${MARK}<span class="wordmark">${SITE_NAME}</span></a>
   </header>
   <label class="backdrop" for="nav-toggle"><span class="sr-only">Close menu</span></label>
   ${renderSidebar(activeId, depth, deals)}
@@ -764,22 +765,24 @@ function build() {
   ]) {
     if (!headers.includes(token)) throw new Error(`Content-Security-Policy is missing ${token}`);
   }
-  if (!home.includes(`alt="${SITE_NAME}"`) || !home.includes(TAGLINE)) {
-    throw new Error("Home page is missing the logo alt text or tagline");
-  }
   const sidebar = home.slice(home.indexOf('id="sidebar"'), home.indexOf('class="main-col"'));
   const topbar = home.slice(home.indexOf('class="topbar"'), home.indexOf('class="backdrop"'));
-  if (!sidebar.includes(`class="brand-logo"`) || !sidebar.includes(LOGO) || !sidebar.includes(TAGLINE)) {
-    throw new Error("Sidebar brand is missing the logo or tagline");
+  for (const chrome of [sidebar, topbar]) {
+    if (!chrome.includes('class="mark"') || !chrome.includes('class="wordmark"') || chrome.includes("wordmark sr-only") || !chrome.includes(SITE_NAME)) {
+      throw new Error("Nav chrome is missing the compact mark or visible wordmark");
+    }
+    if (chrome.includes("brand-logo") || chrome.includes("topbar-logo") || chrome.includes(LOGO)) {
+      throw new Error("Portrait logo must not appear in nav chrome");
+    }
   }
-  if (!topbar.includes(`class="topbar-logo"`) || !topbar.includes(LOGO)) {
-    throw new Error("Mobile topbar is missing the logo");
+  if (!sidebar.includes(TAGLINE) || !sidebar.includes('class="brand-tag"')) {
+    throw new Error("Sidebar brand is missing the tagline");
   }
   if (!fs.existsSync(path.join(distDir, LOGO))) {
-    throw new Error("Logo file was not copied into dist/");
+    throw new Error("Promo logo file was not copied into dist/");
   }
-  if (!sampleDeal.includes(`../../${LOGO}`)) {
-    throw new Error("Deal pages must resolve the logo relative to their depth");
+  if (sampleDeal.includes(LOGO)) {
+    throw new Error("Deal pages must not render the portrait logo in nav chrome");
   }
   if (!home.includes('data-tag="used"') || !home.includes('data-tag="police-trade-in"') || !home.includes('class="tag"')) {
     throw new Error("Home page is missing condition tag filters or badges");
