@@ -47,7 +47,7 @@ if (tagFilters && filterGrid) {
       if (!empty) {
         empty = document.createElement("p");
         empty.className = "empty filter-empty";
-        empty.textContent = "No sample deals with that tag on this board.";
+        empty.textContent = "No deals with that tag on this board.";
         filterGrid.after(empty);
       }
     } else if (empty) {
