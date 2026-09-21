@@ -1,8 +1,12 @@
-# Gear Clearance
+# The Stash Deals
 
-Static prototype of an affiliate deal aggregator. Cards link out to merchants. Gear Clearance is not the seller and not a federal firearms licensee (FFL).
+Static prototype of an affiliate deal aggregator. Cards link out to merchants. The Stash Deals is not the seller and not a federal firearms licensee (FFL).
 
-Host: [gearclearance.mcdaniel.fyi](https://gearclearance.mcdaniel.fyi) on Cloudflare Pages. The published site is the `dist/` folder from `npm run build`. No Node server, email ingest, scraper, or live affiliate API.
+**Tagline:** Grow your stash without shrinking your wallet.
+
+**Public domain (intended):** [thestash.deals](https://thestash.deals)
+
+**Prototype host:** [gearclearance.mcdaniel.fyi](https://gearclearance.mcdaniel.fyi) on Cloudflare Pages. The published site is the `dist/` folder from `npm run build`. Canonical URLs, the sitemap, and JSON-LD still use the prototype host until thestash.deals is the live hostname. No Node server, email ingest, scraper, or live affiliate API.
 
 ## Local preview
 
@@ -29,6 +33,8 @@ The build writes HTML, CSS, a small menu script, fonts, `sitemap.xml`, `robots.t
 
 ### Custom domain
 
+The intended public domain is `thestash.deals`. This prototype still publishes on `gearclearance.mcdaniel.fyi`.
+
 Add `gearclearance.mcdaniel.fyi` as a custom domain on the Pages project.
 
 DNS for that hostname is a **CNAME**:
@@ -39,7 +45,7 @@ DNS for that hostname is a **CNAME**:
 
 If `mcdaniel.fyi` is already on Cloudflare DNS, adding the custom domain in Pages can create that CNAME for you. Leave the record proxied. Wait until the certificate is active, then open https://gearclearance.mcdaniel.fyi.
 
-This is a subdomain, so a CNAME is the right record. Do not move the zone apex for this prototype.
+This is a subdomain, so a CNAME is the right record. Do not move the zone apex for this prototype. Point `thestash.deals` at the same Pages project when that hostname is ready; until then, keep the prototype CNAME above.
 
 ## Information architecture
 
