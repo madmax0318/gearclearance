@@ -46,11 +46,12 @@ Left sidebar, in order:
 3. Ammo — `/ammo/`
 4. Optics — `/optics/`
 5. Accessories — `/accessories/`
-6. Food storage — `/food-storage/`
-7. Survival — `/survival/`
-8. Household goods — `/household/`
-9. Gaming — `/gaming/`
-10. Drones — `/drones/`
+6. Apparel — `/apparel/`
+7. Food storage — `/food-storage/`
+8. Survival — `/survival/`
+9. Household goods — `/household/`
+10. Gaming — `/gaming/`
+11. Drones — `/drones/`
 
 **Curated** sits on a lower rail with a badge. `/curated/` is a placeholder for hand-picked tips.
 
@@ -60,7 +61,7 @@ Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD.
 
 ## Deal data
 
-`data/deals.json` holds 24 deals covering all nine aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters. They render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
+`data/deals.json` holds 29 deals covering all ten aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters. They render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
 
 A deal may include an optional `tags` array of condition or source ids. Tags are not sidebar aisles. Known tags:
 

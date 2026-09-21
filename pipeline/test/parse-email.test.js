@@ -49,6 +49,25 @@ test("parses a plain-text food storage note without headers", async () => {
   assert.match(row.notes, /Plain text had no RFC 5322 headers/);
 });
 
+test("classifies a base layer note as apparel", async () => {
+  const result = await parseEmail(
+    [
+      "Killik Men's Merino Long Sleeve Base Layer Shirt",
+      "Sale price: $59.77 (was $79.99)",
+      "https://www.sportsmans.com/clothing-outdoor-casual-men-women-youth/base-layers/base-layer-tops/killik-mens-merino-long-sleeve-base-layer-shirt/p/p313652",
+    ].join("\n"),
+    { env: {} },
+  );
+  const row = result.candidates[0];
+  assertShape(row);
+  assert.equal(row.aisle, "apparel");
+  assert.equal(row.price, 59.77);
+  assert.equal(row.merchant_domain, "sportsmans.com");
+  assert.equal(row.needs_affiliate, true);
+  assert.equal(row.source_url.includes("tag="), false);
+  assert.equal(row.source_url.includes("utm_"), false);
+});
+
 test("strips a foreign affiliate tag from an ammo sale email", async () => {
   const result = await parseEmailFile(fixture("midway-9mm-sale.eml"), { env: {} });
   const row = result.candidates[0];

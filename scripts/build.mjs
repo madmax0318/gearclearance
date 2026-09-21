@@ -47,6 +47,15 @@ const CATEGORIES = [
       "Deals on magazines, lights, and slings, with pack versus single pricing called out in the title.",
   },
   {
+    id: "apparel",
+    slug: "apparel",
+    name: "Apparel",
+    h1: "Apparel deals",
+    eyebrow: "Apparel",
+    description:
+      "Jackets, boots, gloves, baselayers, and hats. Each card shows the merchant, the previous price, and why the markdown is listed.",
+  },
+  {
     id: "food-storage",
     slug: "food-storage",
     name: "Food storage",
@@ -99,8 +108,8 @@ const HOME = {
   eyebrow: "Latest across every aisle",
   title: "Latest deals | The Stash Deals",
   description:
-    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones.",
-  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
+    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, apparel, food storage, survival, household goods, gaming, and drones.",
+  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, apparel, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
 };
 
 const CURATED = {
@@ -837,7 +846,7 @@ function build() {
     throw new Error("Condition tags must not be sidebar categories");
   }
   const nav = home.slice(home.indexOf('aria-label="Categories"'), home.indexOf('class="rail"'));
-  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
+  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Apparel", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
   let cursor = 0;
   for (const label of aisleOrder) {
     const at = nav.indexOf(`>${label}<`, cursor);
