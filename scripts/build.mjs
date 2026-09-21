@@ -627,6 +627,18 @@ function writeFile(rel, contents) {
   fs.writeFileSync(dest, contents);
 }
 
+// TEMP AvantLink ownership verify app 1655057 — remove after verify
+const AVANTLINK_HOME_VERIFY = `<!-- TEMP AvantLink ownership verify app 1655057 — remove after verify -->
+<script type="text/javascript" src="https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=c3faa08455ca3fdfb5861ff2736b00d74d7f9664"></script>
+`;
+
+function withAvantLinkHomeVerify(html) {
+  const closing = "</body>";
+  const at = html.lastIndexOf(closing);
+  if (at < 0) throw new Error("Home page shell is missing </body>");
+  return `${html.slice(0, at)}${AVANTLINK_HOME_VERIFY}${html.slice(at)}`;
+}
+
 function copyFile(from, rel) {
   const dest = path.join(distDir, rel);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -642,19 +654,21 @@ function build() {
 
   writeFile(
     "index.html",
-    listingPage({
-      activeId: "home",
-      depth: 0,
-      canonicalPath: "/",
-      title: HOME.title,
-      description: HOME.description,
-      h1: HOME.h1,
-      eyebrow: HOME.eyebrow,
-      lede: HOME.lede,
-      deals,
-      allDeals: deals,
-      tagFilters: true,
-    }),
+    withAvantLinkHomeVerify(
+      listingPage({
+        activeId: "home",
+        depth: 0,
+        canonicalPath: "/",
+        title: HOME.title,
+        description: HOME.description,
+        h1: HOME.h1,
+        eyebrow: HOME.eyebrow,
+        lede: HOME.lede,
+        deals,
+        allDeals: deals,
+        tagFilters: true,
+      }),
+    ),
   );
 
   for (const category of CATEGORIES) {
@@ -725,6 +739,13 @@ function build() {
   const home = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
   if (!home.includes("Affiliate disclosure") || !home.includes("Guns") || !home.includes('rel="sponsored noopener noreferrer"')) {
     throw new Error("Home page is missing disclosure, navigation, or sponsored links");
+  }
+  if (!home.includes(AVANTLINK_HOME_VERIFY.trim())) {
+    throw new Error("Home page is missing temporary AvantLink ownership verification");
+  }
+  const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
+  if (guns.includes("avantlink.com") || guns.includes("1655057")) {
+    throw new Error("AvantLink verification must be homepage only");
   }
   if (!home.includes('data-tag="used"') || !home.includes('data-tag="police-trade-in"') || !home.includes('class="tag"')) {
     throw new Error("Home page is missing condition tag filters or badges");
