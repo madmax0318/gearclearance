@@ -1,6 +1,7 @@
 {
   "name": "gearclearance",
   "private": true,
+  "version": "0.1.1",
   "description": "The Stash Deals — static affiliate deal aggregator prototype. Grow your stash without shrinking your wallet.",
   "scripts": {
     "build": "node scripts/build.mjs",
