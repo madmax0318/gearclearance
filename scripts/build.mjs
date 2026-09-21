@@ -35,7 +35,7 @@ const CATEGORIES = [
     h1: "Optics deals",
     eyebrow: "Optics",
     description:
-      "Sample red dot and riflescope deals. Each card shows the merchant, the previous price, and whether the listing is new.",
+      "Sample red dot and riflescope deals. Each card shows the merchant, the previous price, and any condition or source tags.",
   },
   {
     id: "accessories",
@@ -95,6 +95,13 @@ const CURATED = {
     "A short rail of hand-picked sample deals. This curated section is an editorial placeholder, not an automated ranking.",
   lede: "Deals a person flagged as worth a second look. This rail is a placeholder for editorial tips — nothing here is ranked by a formula.",
 };
+
+const DEAL_TAGS = [
+  { id: "used", label: "Used" },
+  { id: "police-trade-in", label: "Police trade-in" },
+];
+
+const TAG_LABEL = Object.fromEntries(DEAL_TAGS.map((tag) => [tag.id, tag.label]));
 
 const DISCLOSURE =
   "The Stash Deals is an affiliate deal aggregator. If you buy through a link on this site, we may earn a commission at no extra cost to you. We do not sell these products, we do not take payment, and we are not a federal firearms licensee (FFL). Every offer is an outbound link to another merchant. Prices, shipping, and availability can change — the merchant page is the offer that matters.";
@@ -201,24 +208,68 @@ function loadDeals() {
     }
     if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
     if (typeof deal.curated !== "boolean") throw new Error(`curated must be boolean on ${deal.slug}`);
+    if (deal.tags !== undefined) {
+      if (!Array.isArray(deal.tags)) throw new Error(`tags must be an array on ${deal.slug}`);
+      const seen = new Set();
+      for (const tag of deal.tags) {
+        if (!TAG_LABEL[tag]) throw new Error(`Unknown tag ${tag} on ${deal.slug}`);
+        if (seen.has(tag)) throw new Error(`Duplicate tag ${tag} on ${deal.slug}`);
+        seen.add(tag);
+      }
+    }
   }
   for (const category of CATEGORIES) {
     if (!deals.some((deal) => deal.category === category.id)) {
       throw new Error(`No deals in ${category.id}`);
     }
   }
+  for (const tag of DEAL_TAGS) {
+    if (!deals.some((deal) => dealTags(deal).includes(tag.id))) {
+      throw new Error(`No sample deal tagged ${tag.id}`);
+    }
+  }
   return deals.sort(byNewest);
+}
+
+function dealTags(deal) {
+  return Array.isArray(deal.tags) ? deal.tags : [];
+}
+
+function renderTagBadges(deal) {
+  const tags = dealTags(deal);
+  if (!tags.length) return "";
+  const items = tags
+    .map((id) => `<li><span class="tag">${esc(TAG_LABEL[id])}</span></li>`)
+    .join("");
+  return `<ul class="deal-tags">${items}</ul>`;
+}
+
+function renderTagFilters(deals) {
+  const present = DEAL_TAGS.filter((tag) => deals.some((deal) => dealTags(deal).includes(tag.id)));
+  if (!present.length) return "";
+  const chips = present
+    .map((tag) => {
+      const count = deals.filter((deal) => dealTags(deal).includes(tag.id)).length;
+      return `<button type="button" class="tag-chip" data-tag="${esc(tag.id)}" aria-pressed="false"><span class="tag-chip-label">${esc(tag.label)}</span><span class="count">${count}</span></button>`;
+    })
+    .join("\n");
+  return `<div class="tag-filters" role="group" aria-label="Filter by condition or source">
+  <button type="button" class="tag-chip is-on" data-tag="" aria-pressed="true"><span class="tag-chip-label">All</span><span class="count">${deals.length}</span></button>
+  ${chips}
+</div>`;
 }
 
 function renderCard(deal, depth, heading) {
   const category = categoryById(deal.category);
   const pct = percentOff(deal.price_now, deal.price_was);
   const tag = heading === "h3" ? "h3" : "h2";
-  return `<article class="card">
+  const tags = dealTags(deal).join(" ");
+  return `<article class="card" data-tags="${esc(tags)}">
   <div class="card-top">
     <a class="cat-link" href="${href(depth, `${category.slug}/`)}">${esc(category.name)}</a>
     ${deal.curated ? '<span class="pill">Curated</span>' : ""}
   </div>
+  ${renderTagBadges(deal)}
   <${tag} class="card-title"><a href="${href(depth, `deals/${deal.slug}/`)}">${esc(deal.title)}</a></${tag}>
   <p class="merchant">${esc(deal.merchant)} · <time datetime="${esc(deal.posted)}">Listed ${esc(formatDate(deal.posted))}</time></p>
   <div class="price-row">
@@ -371,20 +422,22 @@ function itemListNode(deals) {
   };
 }
 
-function listingPage({ activeId, depth, canonicalPath, title, description, h1, eyebrow, lede, deals, allDeals }) {
+function listingPage({ activeId, depth, canonicalPath, title, description, h1, eyebrow, lede, deals, allDeals, tagFilters = false }) {
   const cards = deals.map((deal) => renderCard(deal, depth, "h2")).join("\n");
   const noun = deals.length === 1 ? "deal" : "deals";
+  const filters = tagFilters ? renderTagFilters(deals) : "";
   const main = `
 <div class="wrap">
   <header class="page-head">
     <p class="eyebrow">${esc(eyebrow)}</p>
     <h1>${esc(h1)}</h1>
     <p class="lede">${esc(lede)}</p>
-    <p class="result-count">${deals.length} ${noun} · newest first</p>
+    <p class="result-count" data-total="${deals.length}">${deals.length} ${noun} · newest first</p>
+    ${filters}
   </header>
   ${
     deals.length
-      ? `<section class="deal-grid" aria-label="Deals">\n${cards}\n</section>`
+      ? `<section class="deal-grid" data-filterable="true" aria-label="Deals">\n${cards}\n</section>`
       : `<p class="empty">No sample deals in this aisle yet.</p>`
   }
 </div>`;
@@ -453,6 +506,7 @@ function dealPage(deal, allDeals) {
   <article class="deal-hero">
     <div class="deal-copy">
       <p class="eyebrow">${esc(category.name)}${deal.curated ? " · Curated" : ""}</p>
+      ${renderTagBadges(deal)}
       <h1>${esc(deal.title)}</h1>
       <p class="why">${esc(deal.why)}</p>
     </div>
@@ -487,7 +541,9 @@ function dealPage(deal, allDeals) {
         price: deal.price_now.toFixed(2),
         priceValidUntil: plusDays(deal.posted, 30),
         availability: "https://schema.org/InStock",
-        itemCondition: "https://schema.org/NewCondition",
+        itemCondition: dealTags(deal).some((id) => id === "used" || id === "police-trade-in")
+          ? "https://schema.org/UsedCondition"
+          : "https://schema.org/NewCondition",
         seller: { "@type": "Organization", name: deal.merchant },
       },
     },
@@ -579,6 +635,7 @@ function build() {
       lede: HOME.lede,
       deals,
       allDeals: deals,
+      tagFilters: true,
     }),
   );
 
@@ -597,6 +654,7 @@ function build() {
         lede: category.description,
         deals: inCategory,
         allDeals: deals,
+        tagFilters: true,
       }),
     );
     sitemapEntries.push({
@@ -649,6 +707,12 @@ function build() {
   const home = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
   if (!home.includes("Affiliate disclosure") || !home.includes("Guns") || !home.includes('rel="sponsored noopener noreferrer"')) {
     throw new Error("Home page is missing disclosure, navigation, or sponsored links");
+  }
+  if (!home.includes('data-tag="used"') || !home.includes('data-tag="police-trade-in"') || !home.includes('class="tag"')) {
+    throw new Error("Home page is missing condition tag filters or badges");
+  }
+  if (home.includes("Used</span></a>") || /nav-link[^>]*>[^<]*Used/.test(home)) {
+    throw new Error("Condition tags must not be sidebar categories");
   }
   console.log(`Built ${htmlCount} HTML pages and ${deals.length} deals into dist/`);
 }

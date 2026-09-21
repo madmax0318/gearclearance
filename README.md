@@ -62,13 +62,22 @@ Left sidebar, in order:
 
 **Curated** sits on a lower rail with a badge. `/curated/` is a placeholder for hand-picked tips.
 
-On a narrow screen the same list is a drawer (the Menu control). It works without JavaScript; the small script only closes the drawer on Escape or after a tap.
+On a narrow screen the same list is a drawer (the Menu control). The menu opens without JavaScript. The small script closes the drawer on Escape or after a tap, and it applies the condition-tag chips on home and category pages. Without JavaScript those pages still list every deal.
 
 Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD. Listing pages are real HTML, not an empty app shell.
 
 ## Sample data
 
 `data/deals.json` holds 20 fictional deals covering all seven categories. Affiliate URLs are `https://example.com/out/...` and render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
+
+A deal may include an optional `tags` array of condition or source ids. Tags are not sidebar aisles. Known tags:
+
+| id | Label |
+| --- | --- |
+| `used` | Used |
+| `police-trade-in` | Police trade-in |
+
+Home and each category page show chips for the tags present on that board. The chips filter the cards in the browser. Curated stays a separate rail.
 
 The footer of every page includes the FTC affiliate disclosure.
 
@@ -77,5 +86,5 @@ The footer of every page includes the FTC affiliate disclosure.
 - `data/deals.json` — sample deals
 - `scripts/build.mjs` — writes `dist/`
 - `scripts/preview.mjs` — local static server
-- `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, OFL fonts
+- `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
 - `public/_headers`, `public/favicon.svg` — copied into `dist/`
