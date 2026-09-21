@@ -18,7 +18,7 @@ const CATEGORIES = [
     h1: "Gun deals",
     eyebrow: "Guns",
     description:
-      "Sample gun deals with merchant, was/now price, and why the markdown is listed. The Stash Deals only links out — we are not the seller and we are not an FFL.",
+      "Gun deals with merchant, was/now price, and why the markdown is listed. The Stash Deals only links out — we are not the seller and we are not an FFL.",
   },
   {
     id: "ammo",
@@ -27,7 +27,7 @@ const CATEGORIES = [
     h1: "Ammo deals",
     eyebrow: "Ammo",
     description:
-      "Sample ammunition markdowns with round count in the title, a percent-off badge, and a short note on why the price is worth a look.",
+      "Ammunition markdowns with round count in the title, a percent-off badge, and a short note on why the price is worth a look.",
   },
   {
     id: "optics",
@@ -36,7 +36,7 @@ const CATEGORIES = [
     h1: "Optics deals",
     eyebrow: "Optics",
     description:
-      "Sample red dot and riflescope deals. Each card shows the merchant, the previous price, and any condition or source tags.",
+      "Red dot and riflescope deals. Each card shows the merchant, the previous price, and any condition or source tags.",
   },
   {
     id: "accessories",
@@ -45,7 +45,7 @@ const CATEGORIES = [
     h1: "Accessory deals",
     eyebrow: "Accessories",
     description:
-      "Sample deals on magazines, lights, and slings, with pack versus single pricing called out in the title.",
+      "Deals on magazines, lights, and slings, with pack versus single pricing called out in the title.",
   },
   {
     id: "food-storage",
@@ -54,7 +54,7 @@ const CATEGORIES = [
     h1: "Food storage deals",
     eyebrow: "Food storage",
     description:
-      "Sample clearance prices on freeze-dried food and pantry supplies for longer-term storage.",
+      "Clearance prices on freeze-dried food and pantry supplies for longer-term storage.",
   },
   {
     id: "survival",
@@ -63,7 +63,7 @@ const CATEGORIES = [
     h1: "Survival deals",
     eyebrow: "Survival",
     description:
-      "Sample deals on water, shelter, and a compact medical kit, with the old price beside the sale price.",
+      "Deals on water, shelter, and a compact medical kit, with the old price beside the sale price.",
   },
   {
     id: "household",
@@ -72,7 +72,7 @@ const CATEGORIES = [
     h1: "Household goods deals",
     eyebrow: "Household goods",
     description:
-      "Sample household clearance: portable power and a basic drill kit, using the same card layout as the gear aisles.",
+      "Household clearance: portable power and a basic drill kit, using the same card layout as the gear aisles.",
   },
   {
     id: "gaming",
@@ -81,7 +81,7 @@ const CATEGORIES = [
     h1: "Gaming deals",
     eyebrow: "Gaming",
     description:
-      "Sample markdowns on handhelds and mice. Same card layout as the other aisles, including any condition tags.",
+      "Markdowns on handhelds and mice. Same card layout as the other aisles, including any condition tags.",
   },
   {
     id: "drones",
@@ -90,7 +90,7 @@ const CATEGORIES = [
     h1: "Drone deals",
     eyebrow: "Drones",
     description:
-      "Sample drone deals with merchant, was/now price, and a short note on why the markdown is listed.",
+      "Drone deals with merchant, was/now price, and a short note on why the markdown is listed.",
   },
 ];
 
@@ -100,8 +100,8 @@ const HOME = {
   eyebrow: "Latest across every aisle",
   title: "Latest deals | The Stash Deals",
   description:
-    "Grow your stash without shrinking your wallet. Sample deals on guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones.",
-  lede: "Grow your stash without shrinking your wallet. Newest sample deals across guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
+    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones.",
+  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
 };
 
 const CURATED = {
@@ -111,7 +111,7 @@ const CURATED = {
   eyebrow: "Hand-picked tips",
   title: "Curated picks | The Stash Deals",
   description:
-    "A short rail of hand-picked sample deals. This curated section is an editorial placeholder, not an automated ranking.",
+    "A short rail of hand-picked deals. This curated section is an editorial placeholder, not an automated ranking.",
   lede: "Deals a person flagged as worth a second look. This rail is a placeholder for editorial tips — nothing here is ranked by a formula.",
 };
 
@@ -353,7 +353,7 @@ function renderChrome({ depth, activeId, deals, main }) {
     <footer class="site-footer">
       <div class="wrap">
         <p class="disclosure"><strong>Affiliate disclosure.</strong> ${esc(DISCLOSURE)}</p>
-        <p class="legal">© 2026 ${SITE_NAME}. Sample prices for this static prototype. Not a live feed.</p>
+        <p class="legal">© 2026 ${SITE_NAME}. Confirm prices on the merchant site.</p>
       </div>
     </footer>
   </div>
@@ -462,7 +462,7 @@ function listingPage({ activeId, depth, canonicalPath, title, description, h1, e
   ${
     deals.length
       ? `<section class="deal-grid" data-filterable="true" aria-label="Deals">\n${cards}\n</section>`
-      : `<p class="empty">No sample deals in this aisle yet.</p>`
+      : `<p class="empty">No deals in this aisle yet.</p>`
   }
 </div>`;
   const crumbs =
@@ -542,7 +542,7 @@ function dealPage(deal, allDeals) {
         <p class="off">${pct}% off</p>
       </div>
       <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
-      <p class="fine-note">Sample price for this prototype. Confirm it on the merchant site. The button leaves ${SITE_NAME}.</p>
+      <p class="fine-note">Confirm the price on the merchant site. The button leaves ${SITE_NAME}.</p>
       ${ffl}
     </div>
   </article>
@@ -594,7 +594,7 @@ function notFoundPage(deals) {
   <header class="page-head">
     <p class="eyebrow">Missing page</p>
     <h1>That page is not on the board</h1>
-    <p class="lede">The link does not match a category or a sample deal. Head back to the latest list.</p>
+    <p class="lede">The link does not match a category or a deal. Head back to the latest list.</p>
     <p class="result-count"><a href="./">Latest deals</a></p>
   </header>
 </div>`;
