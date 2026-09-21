@@ -7,8 +7,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const distDir = path.join(rootDir, "dist");
 const SITE_NAME = "The Stash Deals";
 const TAGLINE = "Grow your stash without shrinking your wallet.";
-// Canonicals stay on the prototype host. Intended public domain is https://thestash.deals (see README).
-const SITE = "https://gearclearance.mcdaniel.fyi";
+const SITE = "https://thestash.deals";
 
 const CATEGORIES = [
   {
@@ -227,6 +226,10 @@ function loadDeals() {
       throw new Error(`Bad url on ${deal.slug}`);
     }
     if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
+    const host = parsed.hostname.toLowerCase();
+    if (host === "example.com" || host.endsWith(".example.com") || host === "gearclearance.mcdaniel.fyi") {
+      throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
+    }
     if (typeof deal.curated !== "boolean") throw new Error(`curated must be boolean on ${deal.slug}`);
     if (deal.tags !== undefined) {
       if (!Array.isArray(deal.tags)) throw new Error(`tags must be an array on ${deal.slug}`);
@@ -384,6 +387,7 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}
 ${canonical ? `<meta property="og:url" content="${esc(canonical)}">` : ""}
 <meta property="og:type" content="${esc(ogType)}">
 <meta name="twitter:card" content="summary">
+${canonical ? `<meta name="twitter:url" content="${esc(canonical)}">` : ""}
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <link rel="icon" href="${href(depth, "favicon.svg")}" type="image/svg+xml">
@@ -733,6 +737,39 @@ function build() {
   const home = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
   if (!home.includes("Affiliate disclosure") || !home.includes("Guns") || !home.includes('rel="sponsored noopener noreferrer"')) {
     throw new Error("Home page is missing disclosure, navigation, or sponsored links");
+  }
+  if (!home.includes('<link rel="canonical" href="https://thestash.deals/">')) {
+    throw new Error("Home canonical must be https://thestash.deals/");
+  }
+  if (!home.includes('<meta property="og:url" content="https://thestash.deals/">')) {
+    throw new Error("Home og:url must be https://thestash.deals/");
+  }
+  if (!home.includes('<meta name="twitter:url" content="https://thestash.deals/">')) {
+    throw new Error("Home twitter:url must be https://thestash.deals/");
+  }
+  const bannedHosts = ["gearclearance.mcdaniel.fyi", "example.com"];
+  function walkDist(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkDist(full);
+      else if (/\.(html|xml|txt)$/.test(entry.name)) {
+        const text = fs.readFileSync(full, "utf8");
+        for (const host of bannedHosts) {
+          if (text.includes(host)) {
+            throw new Error(`${path.relative(distDir, full)} still contains ${host}`);
+          }
+        }
+      }
+    }
+  }
+  walkDist(distDir);
+  const robots = fs.readFileSync(path.join(distDir, "robots.txt"), "utf8");
+  const sitemapXml = fs.readFileSync(path.join(distDir, "sitemap.xml"), "utf8");
+  if (!robots.includes("Sitemap: https://thestash.deals/sitemap.xml")) {
+    throw new Error("robots.txt sitemap must use https://thestash.deals");
+  }
+  if (!sitemapXml.includes("<loc>https://thestash.deals/</loc>")) {
+    throw new Error("sitemap loc must use https://thestash.deals");
   }
   const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
   const sampleDeal = fs.readFileSync(path.join(distDir, "deals", deals[0].slug, "index.html"), "utf8");
