@@ -82,5 +82,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, "0.0.0.0", () => {
-  console.log(`Gear Clearance preview at http://localhost:${port}`);
+  console.log(`The Stash Deals preview at http://localhost:${port}`);
 });

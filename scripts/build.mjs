@@ -4,6 +4,9 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
+const SITE_NAME = "The Stash Deals";
+const TAGLINE = "Grow your stash without shrinking your wallet.";
+// Canonicals stay on the prototype host. Intended public domain is https://thestash.deals (see README).
 const SITE = "https://gearclearance.mcdaniel.fyi";
 
 const CATEGORIES = [
@@ -14,7 +17,7 @@ const CATEGORIES = [
     h1: "Gun deals",
     eyebrow: "Guns",
     description:
-      "Sample gun deals with merchant, was/now price, and why the markdown is listed. Gear Clearance only links out — we are not the seller and we are not an FFL.",
+      "Sample gun deals with merchant, was/now price, and why the markdown is listed. The Stash Deals only links out — we are not the seller and we are not an FFL.",
   },
   {
     id: "ammo",
@@ -76,10 +79,10 @@ const HOME = {
   id: "home",
   h1: "Latest deals",
   eyebrow: "Latest across every aisle",
-  title: "Latest deals | Gear Clearance",
+  title: "Latest deals | The Stash Deals",
   description:
-    "Gear Clearance lists sample markdowns on guns, ammo, optics, accessories, food storage, survival gear, and household goods. Outbound affiliate links only.",
-  lede: "Newest sample deals across guns, ammo, optics, accessories, food storage, survival, and household goods. Open a category to narrow the board.",
+    "Grow your stash without shrinking your wallet. Sample deals on guns, ammo, optics, accessories, food storage, survival, and household goods.",
+  lede: "Grow your stash without shrinking your wallet. Newest sample deals across guns, ammo, optics, accessories, food storage, survival, and household goods. Open a category to narrow the board.",
 };
 
 const CURATED = {
@@ -87,14 +90,14 @@ const CURATED = {
   slug: "curated",
   h1: "Curated picks",
   eyebrow: "Hand-picked tips",
-  title: "Curated picks | Gear Clearance",
+  title: "Curated picks | The Stash Deals",
   description:
     "A short rail of hand-picked sample deals. This curated section is an editorial placeholder, not an automated ranking.",
   lede: "Deals a person flagged as worth a second look. This rail is a placeholder for editorial tips — nothing here is ranked by a formula.",
 };
 
 const DISCLOSURE =
-  "Gear Clearance is an affiliate deal aggregator. If you buy through a link on this site, we may earn a commission at no extra cost to you. We do not sell these products, we do not take payment, and we are not a federal firearms licensee (FFL). Every offer is an outbound link to another merchant. Prices, shipping, and availability can change — the merchant page is the offer that matters.";
+  "The Stash Deals is an affiliate deal aggregator. If you buy through a link on this site, we may earn a commission at no extra cost to you. We do not sell these products, we do not take payment, and we are not a federal firearms licensee (FFL). Every offer is an outbound link to another merchant. Prices, shipping, and availability can change — the merchant page is the offer that matters.";
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFmt = new Intl.DateTimeFormat("en-US", {
@@ -104,7 +107,7 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.2" y="1.2" width="29.6" height="29.6" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 23.2 16 8.2l8 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16" cy="17.2" r="2.3" fill="#e4b54a"/></svg>`;
+const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.2" y="1.2" width="29.6" height="29.6" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 23.2 16 8.2l8 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16" cy="17.2" r="2.3" fill="#e0a82e"/></svg>`;
 
 const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3.2 3.2h5.1v1.4H4.6v6.8h6.8V7.7h1.4v5.1H3.2V3.2z"/><path fill="currentColor" d="M8.2 2.4h5.4V7.8h-1.4V4.8L7.4 9.6 6.4 8.6l4.8-4.8H8.2V2.4z"/></svg>`;
 
@@ -251,8 +254,8 @@ function renderSidebar(activeId, depth, deals) {
   <a class="brand" href="${href(depth, "")}">
     ${MARK}
     <span class="brand-text">
-      <span class="wordmark">Gear Clearance</span>
-      <span class="brand-tag">Outbound deal alerts</span>
+      <span class="wordmark">${SITE_NAME}</span>
+      <span class="brand-tag">${esc(TAGLINE)}</span>
     </span>
   </a>
   <nav class="nav-list" aria-label="Categories">
@@ -270,7 +273,7 @@ function renderChrome({ depth, activeId, deals, main }) {
   return `<div class="app">
   <header class="topbar">
     <label class="menu-btn" for="nav-toggle"><span class="menu-bars" aria-hidden="true"></span>Menu</label>
-    <a class="topbar-mark" href="${href(depth, "")}">Gear Clearance</a>
+    <a class="topbar-mark" href="${href(depth, "")}">${SITE_NAME}</a>
   </header>
   <label class="backdrop" for="nav-toggle"><span class="sr-only">Close menu</span></label>
   ${renderSidebar(activeId, depth, deals)}
@@ -279,7 +282,7 @@ function renderChrome({ depth, activeId, deals, main }) {
     <footer class="site-footer">
       <div class="wrap">
         <p class="disclosure"><strong>Affiliate disclosure.</strong> ${esc(DISCLOSURE)}</p>
-        <p class="legal">© 2026 Gear Clearance. Sample prices for this static prototype. Not a live feed.</p>
+        <p class="legal">© 2026 ${SITE_NAME}. Sample prices for this static prototype. Not a live feed.</p>
       </div>
     </footer>
   </div>
@@ -299,8 +302,8 @@ function pageShell({ title, description, canonical, robots = "index, follow", og
 <meta name="description" content="${esc(description)}">
 ${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}
 <meta name="robots" content="${esc(robots)}">
-<meta name="theme-color" content="#0e1210">
-<meta property="og:site_name" content="Gear Clearance">
+<meta name="theme-color" content="#0f1410">
+<meta property="og:site_name" content="${SITE_NAME}">
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
@@ -322,13 +325,25 @@ ${body}
 `;
 }
 
+function organizationNode() {
+  return {
+    "@type": "Organization",
+    "@id": `${SITE}/#organization`,
+    name: SITE_NAME,
+    url: `${SITE}/`,
+    slogan: TAGLINE,
+    description: TAGLINE,
+  };
+}
+
 function websiteNode() {
   return {
     "@type": "WebSite",
     "@id": `${SITE}/#website`,
-    name: "Gear Clearance",
+    name: SITE_NAME,
     url: `${SITE}/`,
     description: HOME.description,
+    publisher: { "@id": `${SITE}/#organization` },
   };
 }
 
@@ -381,6 +396,7 @@ function listingPage({ activeId, depth, canonicalPath, title, description, h1, e
           { name: h1, url: `${SITE}${canonicalPath}` },
         ];
   const graph = [
+    organizationNode(),
     websiteNode(),
     {
       "@type": "CollectionPage",
@@ -411,11 +427,11 @@ function dealPage(deal, allDeals) {
   const description = clip(
     `${deal.title} is ${money(deal.price_now)} at ${deal.merchant} (was ${money(deal.price_was)}, ${pct}% off). ${deal.why}`,
   );
-  const title = `${deal.title} — ${money(deal.price_now)} | Gear Clearance`;
+  const title = `${deal.title} — ${money(deal.price_now)} | ${SITE_NAME}`;
   const related = allDeals.filter((item) => item.category === deal.category && item.slug !== deal.slug).slice(0, 3);
   const ffl =
     deal.category === "guns"
-      ? `<p class="fine-note">Gear Clearance does not sell this firearm and is not an FFL. Checkout and any transfer happen at the merchant.</p>`
+      ? `<p class="fine-note">${SITE_NAME} does not sell this firearm and is not an FFL. Checkout and any transfer happen at the merchant.</p>`
       : "";
   const relatedHtml = related.length
     ? `<section class="related" aria-labelledby="related-heading">
@@ -448,13 +464,14 @@ function dealPage(deal, allDeals) {
         <p class="off">${pct}% off</p>
       </div>
       <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
-      <p class="fine-note">Sample price for this prototype. Confirm it on the merchant site. The button leaves Gear Clearance.</p>
+      <p class="fine-note">Sample price for this prototype. Confirm it on the merchant site. The button leaves ${SITE_NAME}.</p>
       ${ffl}
     </div>
   </article>
   ${relatedHtml}
 </div>`;
   const graph = [
+    organizationNode(),
     websiteNode(),
     {
       "@type": "Product",
@@ -502,8 +519,8 @@ function notFoundPage(deals) {
   </header>
 </div>`;
   return pageShell({
-    title: "Page not found | Gear Clearance",
-    description: "That Gear Clearance page does not exist.",
+    title: "Page not found | The Stash Deals",
+    description: "That page does not exist on The Stash Deals.",
     robots: "noindex, follow",
     depth: 0,
     body: renderChrome({ depth: 0, activeId: "", deals, main }),
@@ -573,7 +590,7 @@ function build() {
         activeId: category.id,
         depth: 1,
         canonicalPath: `/${category.slug}/`,
-        title: `${category.h1} | Gear Clearance`,
+        title: `${category.h1} | ${SITE_NAME}`,
         description: category.description,
         h1: category.h1,
         eyebrow: category.eyebrow,
