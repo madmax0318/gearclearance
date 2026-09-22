@@ -13,6 +13,7 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
+  ".png": "image/png",
   ".woff2": "font/woff2",
   ".xml": "application/xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
