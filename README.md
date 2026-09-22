@@ -31,6 +31,8 @@ Open http://localhost:4173
 
 The build writes HTML, CSS, a small menu script, fonts, `sitemap.xml`, `robots.txt`, and `_headers`. `_headers` sets baseline security headers (nosniff, frame denial, referrer policy, a self-only content security policy, and HSTS).
 
+The stylesheet and menu script are written with a content hash in the filename (`css/site.<hash>.css`, `js/nav.<hash>.js`). HTML always revalidates but those assets are cached for a year, so the hash is what guarantees a page never loads against a stale stylesheet. Edit `src/site.css` or `src/nav.js` and the next build emits a new filename on its own.
+
 ### Custom domain
 
 The public hostname is `thestash.deals`. Canonicals, the sitemap, and structured data use that host only.
