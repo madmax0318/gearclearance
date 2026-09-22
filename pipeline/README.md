@@ -1,6 +1,6 @@
 # The Stash Deals pipeline (Ion Cannon)
 
-Parking-lot package for [thestash.deals](https://thestash.deals). It drafts deal rows on Ion Cannon (Ubuntu, Node 18+, optional local Ollama). It does **not** run during `npm run build`, and it does not edit `data/deals.json` or the Impact / AvantLink tags on the static site.
+Parking-lot package for [thestash.deals](https://thestash.deals). It drafts deal rows on Ion Cannon (Ubuntu, Node 22+, optional local Ollama). It does **not** run during `npm run build`, and it does not edit `data/deals.json` or the Impact / AvantLink tags on the static site.
 
 Locked order: **Collect → Clean → Wrap → Review → Publish.**
 
@@ -11,6 +11,7 @@ Locked order: **Collect → Clean → Wrap → Review → Publish.**
 | Wrap | `src/wrap.js` | Apply the merchant map. No map row, or no publisher id in the environment → clean `source_url` and `needs_affiliate: true`. |
 | Review | caller | Human status. This package does not approve deals. |
 | Publish | `src/publish.js` | Off unless `AUTO_PUBLISH=1` **and** `review.status` is `approved`. Writes an in-memory outbox only. |
+| Hist price | `src/price-history.js` | Local SQLite check after wrap and before the publish decision. Flags weak deals. Does not block publish. |
 
 ## Standing publish
 
@@ -18,13 +19,33 @@ Locked order: **Collect → Clean → Wrap → Review → Publish.**
 
 The default is off (`AUTO_PUBLISH=0`, and an unset variable is also off). Only the exact value `1` counts. An approved review with the flag off stays in review. A flag of `1` with any other review status stays in review. Enabling the flag does not deploy the site and does not change live deal cards.
 
+## Historical price gate
+
+Before review hands off to publish, each candidate is looked up in a local SQLite file (`src/price-history.js`). The result is attached as `hist_price` (`ok`, `weak`, or `unknown`). Publish stays human-gated: `AUTO_PUBLISH` still defaults off, and a weak or unknown price does not block the outbox.
+
+The database file is `pipeline/data/price_history.sqlite` (gitignored). Override it with `PRICE_HISTORY_DB`. Install the native driver once, then create or migrate the table (opening the file also runs `CREATE TABLE IF NOT EXISTS`):
+
+```bash
+cd pipeline
+npm install
+node src/cli.js price-history init
+```
+
+`better-sqlite3` needs Node 22 or newer. Rows are keyed by merchant plus a normalized title, and by SKU when one is present. Each row stores the raw title, price, currency, source, `seen_at`, and aisle or category.
+
+- No matching rows: `hist` is `unknown`. The candidate price is inserted as an ingest snapshot so the next run has history. Unknown does not drop the deal.
+- A price must be at least 5% under `min(last_seen, p50_30d)` (`HIST_DEAL_THRESHOLD`) to be `ok`. Anything else with history is `weak` (flagged, still eligible for human review).
+- After a successful outbox publish (`AUTO_PUBLISH=1` and `review.status` approved), another snapshot is stored. The scaffold still does not write `data/deals.json`.
+
+Ammo aisles can attach a best-effort Ammoseek cost-per-round when `AMMOSEEK_ENRICH=1`. Cloudflare, timeouts, and other failures skip that enrichment and keep the SQLite result. They never block publish. Gaming, household, and food-storage Amazon history (CamelCamelCamel / Keepa) is a later stub only and is not implemented.
+
 ## Paid ads
 
 `src/ads.js` is a scaffold for soft goods only: Household, Food storage, and accessories that are not weapon-related. It throws `ADS_WEAPONS_REFUSED` for Guns, Ammo, optics, or weapons-related copy (including weapon lights and magazines). It does not call Meta or X.
 
 ## Ion Cannon
 
-From the repo root:
+From the repo root, after `npm install` inside `pipeline/` (needed for `better-sqlite3`):
 
 ```bash
 npm test
@@ -63,7 +84,7 @@ node src/cli.js publish --review approved
 node src/cli.js ads --aisle household --title 'Portable power station'
 ```
 
-`wrap` reads `pipeline/data/merchant-map.example.json` unless you pass `--map`. `publish` prints the gate decision for the current environment and does not deploy. `ads` exits non-zero for guns, ammo, and weapons-related items.
+`wrap` reads `pipeline/data/merchant-map.example.json` unless you pass `--map`. `publish` prints the gate decision for the current environment and does not deploy. `ads` exits non-zero for guns, ammo, and weapons-related items. `price-history init` creates the local hist-price database.
 
 ## Environment
 

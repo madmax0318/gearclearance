@@ -5,3 +5,5 @@ dist/
 .env.*
 !.env.example
 pipeline/out/
+pipeline/data/*.sqlite
+pipeline/data/*.sqlite-*

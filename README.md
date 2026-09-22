@@ -63,7 +63,7 @@ Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD.
 
 ## Deal data
 
-`data/deals.json` holds 29 deals covering all ten aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters. They render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
+`data/deals.json` holds 43 deals covering all ten aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters (`tag`, `linkId`, `utm_*`, or `ref_=as_li_*`). They render with `rel="sponsored noopener noreferrer"`. A deal with no listed price keeps `price_now` and `price_was` null and renders as a sale page. Edit the JSON and rebuild to change the board.
 
 A deal may include an optional `tags` array of condition or source ids. Tags are not sidebar aisles. Known tags:
 
@@ -111,4 +111,4 @@ Below roughly 48px the illustration stops reading, so the mobile topbar and `fav
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
 - `public/_headers`, `public/favicon.svg`, `public/brand/` — copied into `dist/` (see Brand assets)
-- `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish). Not part of the Pages build. See `pipeline/README.md`.
+- `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish), plus a local SQLite hist-price check that does not publish on its own. Not part of the Pages build. `npm test` runs that package and needs Node 22 after `npm install` inside `pipeline/`. See `pipeline/README.md`.
