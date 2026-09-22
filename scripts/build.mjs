@@ -141,10 +141,18 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+// Master poster art. Stays in the repo as the source for the derived assets below; too tall and
+// too heavy to ship or to sit in nav chrome.
 const LOGO = "brand/stash-deals-logo.jpg";
-const NAV_LOGO = "brand/stash-deals-logo-nav.jpg";
-const NAV_LOGO_W = 1020;
-const NAV_LOGO_H = 328;
+// Square crop of the poster emblem, sized for the sidebar lockup at up to 3x.
+const EMBLEM = "brand/stash-deals-emblem.jpg";
+const EMBLEM_PX = 320;
+const OG_IMAGE = "brand/stash-deals-og.jpg";
+const APPLE_ICON = "brand/apple-touch-icon.png";
+const OG_ALT = `${SITE_NAME} — ${TAGLINE}`;
+// Crate mark for the places the illustration is too small to read: mobile topbar and favicon.
+// Drawn from the poster's ammo crates, so it is brand art rather than a generic placeholder.
+const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M2.5 8.5h27v4.2h-27z" fill="currentColor"/><rect x="4.2" y="12.7" width="23.6" height="12.8" rx="1.6" fill="#3d4a32" stroke="currentColor" stroke-width="1.8"/><rect x="11.6" y="16.4" width="8.8" height="5.4" rx="1" fill="#d4a017"/></svg>`;
 
 const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3.2 3.2h5.1v1.4H4.6v6.8h6.8V7.7h1.4v5.1H3.2V3.2z"/><path fill="currentColor" d="M8.2 2.4h5.4V7.8h-1.4V4.8L7.4 9.6 6.4 8.6l4.8-4.8H8.2V2.4z"/></svg>`;
 
@@ -337,8 +345,11 @@ function renderSidebar(activeId, depth, deals) {
   const curatedCurrent = activeId === "curated" ? ' aria-current="page"' : "";
   return `<aside id="sidebar" class="sidebar">
   <a class="brand" href="${href(depth, "")}">
-    <img class="brand-logo" src="${href(depth, NAV_LOGO)}" width="${NAV_LOGO_W}" height="${NAV_LOGO_H}" alt="${esc(SITE_NAME)}">
-    <span class="brand-tag">${esc(TAGLINE)}</span>
+    <img class="brand-emblem" src="${href(depth, EMBLEM)}" width="${EMBLEM_PX}" height="${EMBLEM_PX}" alt="" decoding="async">
+    <span class="brand-text">
+      <span class="wordmark">${SITE_NAME}</span>
+      <span class="brand-tag">${esc(TAGLINE)}</span>
+    </span>
   </a>
   <nav class="nav-list" aria-label="Categories">
     ${items}
@@ -355,7 +366,7 @@ function renderChrome({ depth, activeId, deals, main }) {
   return `<div class="app">
   <header class="topbar">
     <label class="menu-btn" for="nav-toggle"><span class="menu-bars" aria-hidden="true"></span>Menu</label>
-    <a class="topbar-mark" href="${href(depth, "")}"><img class="topbar-logo" src="${href(depth, NAV_LOGO)}" width="${NAV_LOGO_W}" height="${NAV_LOGO_H}" alt="${esc(SITE_NAME)}"></a>
+    <a class="topbar-mark" href="${href(depth, "")}">${MARK}<span class="wordmark">${SITE_NAME}</span></a>
   </header>
   <label class="backdrop" for="nav-toggle"><span class="sr-only">Close menu</span></label>
   ${renderSidebar(activeId, depth, deals)}
@@ -394,11 +405,18 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}
 <meta property="og:description" content="${esc(description)}">
 ${canonical ? `<meta property="og:url" content="${esc(canonical)}">` : ""}
 <meta property="og:type" content="${esc(ogType)}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="${SITE}/${OG_IMAGE}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(OG_ALT)}">
+<meta name="twitter:card" content="summary_large_image">
 ${canonical ? `<meta name="twitter:url" content="${esc(canonical)}">` : ""}
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
+<meta name="twitter:image" content="${SITE}/${OG_IMAGE}">
+<meta name="twitter:image:alt" content="${esc(OG_ALT)}">
 <link rel="icon" href="${href(depth, "favicon.svg")}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${href(depth, APPLE_ICON)}">
 <link rel="stylesheet" href="${href(depth, "css/site.css")}">${blocks}
 </head>
 <body>
@@ -420,6 +438,13 @@ function organizationNode() {
     url: `${SITE}/`,
     slogan: TAGLINE,
     description: TAGLINE,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE}/${EMBLEM}`,
+      width: EMBLEM_PX,
+      height: EMBLEM_PX,
+    },
+    image: `${SITE}/${OG_IMAGE}`,
   };
 }
 
@@ -732,8 +757,9 @@ function build() {
   copyFile(path.join(rootDir, "src", "site.css"), path.join("css", "site.css"));
   copyFile(path.join(rootDir, "src", "nav.js"), path.join("js", "nav.js"));
   copyFile(path.join(rootDir, "public", "favicon.svg"), "favicon.svg");
-  copyFile(path.join(rootDir, "public", "brand", "stash-deals-logo.jpg"), path.join("brand", "stash-deals-logo.jpg"));
-  copyFile(path.join(rootDir, "public", "brand", "stash-deals-logo-nav.jpg"), path.join("brand", "stash-deals-logo-nav.jpg"));
+  for (const asset of [EMBLEM, OG_IMAGE, APPLE_ICON]) {
+    copyFile(path.join(rootDir, "public", ...asset.split("/")), path.join(...asset.split("/")));
+  }
   copyFile(path.join(rootDir, "public", "_headers"), "_headers");
   copyFile(path.join(rootDir, "public", "avantlink_confirmation.txt"), "avantlink_confirmation.txt");
 
@@ -814,30 +840,54 @@ function build() {
   const sidebar = home.slice(home.indexOf('id="sidebar"'), home.indexOf('class="main-col"'));
   const topbar = home.slice(home.indexOf('class="topbar"'), home.indexOf('class="backdrop"'));
   for (const chrome of [sidebar, topbar]) {
-    if (!chrome.includes(`alt="${SITE_NAME}"`) || !chrome.includes(NAV_LOGO)) {
-      throw new Error("Nav chrome is missing the brand logo");
+    if (!chrome.includes('class="wordmark"') || chrome.includes("wordmark sr-only") || !chrome.includes(SITE_NAME)) {
+      throw new Error("Nav chrome is missing the visible wordmark");
     }
-    if (chrome.includes('class="mark"') || chrome.includes("<svg")) {
-      throw new Error("SVG mark must not appear in nav chrome");
+    if (chrome.includes("brand-logo") || chrome.includes("topbar-logo") || chrome.includes(LOGO)) {
+      throw new Error("Portrait poster must not appear in nav chrome");
     }
-    if (chrome.includes(LOGO)) {
-      throw new Error("Portrait logo must not appear in nav chrome");
+    // The old placeholder was a triangle in a rounded square and was not brand art.
+    if (chrome.includes("M8 23.2 16 8.2l8 15")) {
+      throw new Error("Placeholder triangle mark must not return to nav chrome");
     }
   }
-  if (!sidebar.includes('class="brand-logo"') || !topbar.includes('class="topbar-logo"')) {
-    throw new Error("Sidebar and mobile topbar must both use the logo image");
+  // The sidebar has room for the illustration; the topbar does not, so it keeps the crate mark.
+  if (!sidebar.includes('class="brand-emblem"') || !sidebar.includes(EMBLEM)) {
+    throw new Error("Sidebar brand is missing the emblem lockup");
+  }
+  if (!topbar.includes('class="mark"') || topbar.includes(EMBLEM)) {
+    throw new Error("Mobile topbar must use the crate mark, not the emblem image");
+  }
+  if (!topbar.includes("#d4a017")) {
+    throw new Error("Topbar mark must be the brand crate mark, not a generic glyph");
   }
   if (!sidebar.includes(TAGLINE) || !sidebar.includes('class="brand-tag"')) {
     throw new Error("Sidebar brand is missing the tagline");
   }
-  if (!fs.existsSync(path.join(distDir, LOGO)) || !fs.existsSync(path.join(distDir, NAV_LOGO))) {
-    throw new Error("Logo files were not copied into dist/");
+  for (const asset of [EMBLEM, OG_IMAGE, APPLE_ICON]) {
+    if (!fs.existsSync(path.join(distDir, ...asset.split("/")))) {
+      throw new Error(`Brand asset ${asset} was not copied into dist/`);
+    }
   }
-  if (!sampleDeal.includes(`../../${NAV_LOGO}`)) {
-    throw new Error("Deal pages must resolve the nav logo relative to their depth");
+  if (fs.existsSync(path.join(distDir, LOGO))) {
+    throw new Error("Master poster is unreferenced art and must not ship in dist/");
   }
   if (sampleDeal.includes(LOGO)) {
-    throw new Error("Deal pages must not render the portrait logo in nav chrome");
+    throw new Error("Deal pages must not render the portrait poster");
+  }
+  if (!sampleDeal.includes(`../../${EMBLEM}`)) {
+    throw new Error("Deal pages must resolve the emblem relative to their depth");
+  }
+  for (const [page, name] of [[home, "home"], [guns, "guns"], [sampleDeal, "deal"]]) {
+    if (!page.includes(`<meta property="og:image" content="${SITE}/${OG_IMAGE}">`)) {
+      throw new Error(`Missing absolute og:image on the ${name} page`);
+    }
+    if (!page.includes('content="summary_large_image"')) {
+      throw new Error(`Social card on the ${name} page must be summary_large_image`);
+    }
+    if (!page.includes(`rel="apple-touch-icon"`)) {
+      throw new Error(`Missing apple-touch-icon on the ${name} page`);
+    }
   }
   if (!home.includes('data-tag="used"') || !home.includes('data-tag="police-trade-in"') || !home.includes('class="tag"')) {
     throw new Error("Home page is missing condition tag filters or badges");
