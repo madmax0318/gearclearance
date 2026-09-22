@@ -450,5 +450,77 @@
     "url": "https://www.amazon.com/dp/B01FOMPJ18",
     "curated": false,
     "posted": "2026-09-21"
+  },
+  {
+    "slug": "warne-maxlite-msr-30mm-0-moa",
+    "title": "Warne Maxlite MSR 30mm Cantilever Scope Mount 0 MOA",
+    "merchant": "Primary Arms",
+    "price_now": 52.24,
+    "price_was": 99.99,
+    "category": "optics",
+    "why": "A Warne Maxlite MSR 30mm cantilever mount, 0 MOA, is $52.24, down from $99.99.",
+    "url": "https://www.primaryarms.com/warne-maxlite-msr-cantilever-scope-mount-30mm-0-moa-black-anodized",
+    "curated": false,
+    "posted": "2026-09-22"
+  },
+  {
+    "slug": "trijicon-rmr-type-2-fde-3-25",
+    "title": "Trijicon RMR Type 2 FDE 3.25 MOA",
+    "merchant": "Primary Arms",
+    "price_now": 489.99,
+    "price_was": 589.99,
+    "category": "optics",
+    "why": "Trijicon RMR Type 2 in FDE, 3.25 MOA, is $489.99, down from $589.99.",
+    "url": "https://www.primaryarms.com/trijicon-rmr-type-2-led-reflex-sight-3.25-moa-fde",
+    "curated": false,
+    "posted": "2026-09-22"
+  },
+  {
+    "slug": "troy-556-11-5-a4-upper",
+    "title": "Troy Industries 5.56 NATO 11.5\" A4 Complete Upper",
+    "merchant": "Primary Arms",
+    "price_now": 751.21,
+    "price_was": 899.99,
+    "category": "guns",
+    "why": "Troy's 5.56 11.5-inch A4 complete upper is $751.21, down from $899.99.",
+    "url": "https://www.primaryarms.com/troy-industries-5-56-upper-receiver-kit-w-sights-a3-gen-2-socc-11-5in",
+    "curated": false,
+    "posted": "2026-09-22"
+  },
+  {
+    "slug": "geissele-stratomatch-22-arc-20",
+    "title": "Geissele Automatics 20\" GFR Stratomatch 22 ARC AR-15 Rifle",
+    "merchant": "Primary Arms",
+    "price_now": 2656.3,
+    "price_was": 3250.0,
+    "category": "guns",
+    "why": "Primary Arms shows $2,656.30 in the cart for this 20-inch 22 ARC Stratomatch, down from $3,250.00.",
+    "url": "https://www.primaryarms.com/geissele-automatics-freedom-rifle-stratomatch-22-arc-ar-15-rifle-20in-ddc",
+    "curated": false,
+    "posted": "2026-09-22"
+  },
+  {
+    "slug": "geissele-2-stage-ak-x-trigger",
+    "title": "Geissele Automatics 2-Stage AK-X Trigger",
+    "merchant": "Primary Arms",
+    "price_now": 257.72,
+    "price_was": 355.0,
+    "category": "accessories",
+    "why": "Primary Arms shows $257.72 in the cart for the Geissele 2-stage AK-X trigger, down from $355.00.",
+    "url": "https://www.primaryarms.com/geissele-automatics-2-stage-ak-trigger",
+    "curated": false,
+    "posted": "2026-09-22"
+  },
+  {
+    "slug": "opticsplanet-ammo-deals",
+    "title": "OpticsPlanet Ammo Deals — up to 14% off",
+    "merchant": "OpticsPlanet",
+    "price_now": null,
+    "price_was": null,
+    "category": "ammo",
+    "why": "OpticsPlanet ammo deals, up to 14% off. No single price was listed with the link.",
+    "url": "https://www.opticsplanet.com/ammo-deals091826.html",
+    "curated": false,
+    "posted": "2026-09-22"
   }
 ]
