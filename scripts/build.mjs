@@ -141,6 +141,18 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+// _headers caches /css/* and /js/* for a day, and HTML always revalidates, so an unfingerprinted
+// stylesheet lets a fresh page load against a stale cached one. Content hashes keep the pair honest.
+const CSS_SRC = path.join(rootDir, "src", "site.css");
+const JS_SRC = path.join(rootDir, "src", "nav.js");
+
+function fingerprint(file) {
+  return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex").slice(0, 10);
+}
+
+const CSS_PATH = `css/site.${fingerprint(CSS_SRC)}.css`;
+const JS_PATH = `js/nav.${fingerprint(JS_SRC)}.js`;
+
 // Master poster art. Stays in the repo as the source for the derived assets below; too tall and
 // too heavy to ship or to sit in nav chrome.
 const LOGO = "brand/stash-deals-logo.jpg";
@@ -417,13 +429,13 @@ ${canonical ? `<meta name="twitter:url" content="${esc(canonical)}">` : ""}
 <meta name="twitter:image:alt" content="${esc(OG_ALT)}">
 <link rel="icon" href="${href(depth, "favicon.svg")}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${href(depth, APPLE_ICON)}">
-<link rel="stylesheet" href="${href(depth, "css/site.css")}">${blocks}
+<link rel="stylesheet" href="${href(depth, CSS_PATH)}">${blocks}
 </head>
 <body>
 <a class="skip" href="#content">Skip to deals</a>
 <input class="nav-toggle" id="nav-toggle" type="checkbox">
 ${body}
-<script src="${href(depth, "js/nav.js")}"></script>
+<script src="${href(depth, JS_PATH)}"></script>
 ${IMPACT_UTT}
 </body>
 </html>
@@ -754,8 +766,8 @@ function build() {
     `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
   );
 
-  copyFile(path.join(rootDir, "src", "site.css"), path.join("css", "site.css"));
-  copyFile(path.join(rootDir, "src", "nav.js"), path.join("js", "nav.js"));
+  copyFile(CSS_SRC, path.join(...CSS_PATH.split("/")));
+  copyFile(JS_SRC, path.join(...JS_PATH.split("/")));
   copyFile(path.join(rootDir, "public", "favicon.svg"), "favicon.svg");
   for (const asset of [EMBLEM, OG_IMAGE, APPLE_ICON]) {
     copyFile(path.join(rootDir, "public", ...asset.split("/")), path.join(...asset.split("/")));
@@ -836,6 +848,20 @@ function build() {
     impactHash,
   ]) {
     if (!headers.includes(token)) throw new Error(`Content-Security-Policy is missing ${token}`);
+  }
+  for (const [page, name] of [[home, "home"], [guns, "guns"], [sampleDeal, "deal"]]) {
+    if (!page.includes(CSS_PATH) || !page.includes(JS_PATH)) {
+      throw new Error(`The ${name} page must link the fingerprinted css and js`);
+    }
+    // An unhashed URL would be served from the day-long cache and could go stale against this HTML.
+    if (page.includes("css/site.css") || page.includes("js/nav.js")) {
+      throw new Error(`The ${name} page links an unfingerprinted asset`);
+    }
+  }
+  for (const asset of [CSS_PATH, JS_PATH]) {
+    if (!fs.existsSync(path.join(distDir, ...asset.split("/")))) {
+      throw new Error(`Fingerprinted asset ${asset} was not written into dist/`);
+    }
   }
   const sidebar = home.slice(home.indexOf('id="sidebar"'), home.indexOf('class="main-col"'));
   const topbar = home.slice(home.indexOf('class="topbar"'), home.indexOf('class="backdrop"'));
