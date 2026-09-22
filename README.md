@@ -111,4 +111,4 @@ Below roughly 48px the illustration stops reading, so the mobile topbar and `fav
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
 - `public/_headers`, `public/favicon.svg`, `public/brand/` — copied into `dist/` (see Brand assets)
-- `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish). Not part of the Pages build. See `pipeline/README.md`.
+- `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish), plus a local SQLite hist-price check that does not publish on its own. Not part of the Pages build. `npm test` runs that package and needs Node 22 after `npm install` inside `pipeline/`. See `pipeline/README.md`.
