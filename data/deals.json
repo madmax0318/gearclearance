@@ -354,5 +354,101 @@
     "url": "https://www.sportsmans.com/hunting-headwear/sitka-traverse-beanie-waterfowl-marsh-one-size-fits-most/p/1720459",
     "curated": false,
     "posted": "2026-09-09"
+  },
+  {
+    "slug": "pd-energizer-max-c-batteries-4-pack",
+    "title": "4-Pack Energizer MAX C Batteries",
+    "merchant": "Amazon",
+    "price_now": 5.49,
+    "price_was": 9.17,
+    "category": "household",
+    "why": "A 4-pack of Energizer MAX C batteries is $5.49, down from $9.17.",
+    "url": "https://www.amazon.com/dp/B000YHWDQS",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-augason-farms-meal-pouch-sale",
+    "title": "Augason Farms Meal Pouch Sale",
+    "merchant": "Augason Farms",
+    "price_now": null,
+    "price_was": null,
+    "category": "food-storage",
+    "why": "This is a sale page for Augason Farms meal pouches. No price was listed with the link.",
+    "url": "https://www.augasonfarms.com/collections/pouches",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-scott-comfortplus-mega-rolls-12-pack",
+    "title": "12-Pack Scott ComfortPlus Mega Rolls Toilet Paper (310 Sheets/Roll)",
+    "merchant": "Amazon",
+    "price_now": 5.4,
+    "price_was": 8.45,
+    "category": "household",
+    "why": "A 12-pack of Scott ComfortPlus mega rolls is $5.40, down from $8.45.",
+    "url": "https://www.amazon.com/dp/B0DKKPRGWL",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-vevor-18-log-skidding-tongs",
+    "title": "VEVOR 18\" Log Skidding Tongs",
+    "merchant": "Amazon",
+    "price_now": 20.97,
+    "price_was": 35.9,
+    "category": "household",
+    "why": "18-inch log skidding tongs are $20.97, down from $35.90.",
+    "url": "https://www.amazon.com/dp/B0CDW62Y5X",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-blackstone-6-griddle-scraper",
+    "title": "Blackstone Heavy-Duty 6\" Griddle Scraper",
+    "merchant": "Amazon",
+    "price_now": 5.69,
+    "price_was": 9.99,
+    "category": "household",
+    "why": "A heavy-duty 6-inch griddle scraper is $5.69, down from $9.99.",
+    "url": "https://www.amazon.com/dp/B085CLLX4M",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-amazon-grocery-smoked-bbq-rub-25-oz",
+    "title": "Amazon Grocery Smoked BBQ Rub & Seasoning, 25 oz.",
+    "merchant": "Amazon",
+    "price_now": 5.11,
+    "price_was": 10.93,
+    "category": "food-storage",
+    "why": "A 25 oz smoked BBQ rub is $5.11, down from $10.93.",
+    "url": "https://www.amazon.com/dp/B08H66JD3H",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-tuioyoc-ceramic-hand-juicer",
+    "title": "Tuioyoc Ceramic Hand Juicer",
+    "merchant": "Amazon",
+    "price_now": 8.49,
+    "price_was": 16.99,
+    "category": "household",
+    "why": "A ceramic hand juicer is $8.49, down from $16.99.",
+    "url": "https://www.amazon.com/dp/B0F7RPWWBC",
+    "curated": false,
+    "posted": "2026-09-21"
+  },
+  {
+    "slug": "pd-purely-elizabeth-probiotic-granola-8-oz",
+    "title": "Purely Elizabeth Probiotic Chocolate Sea Salt Ancient Grain Granola, 8 oz.",
+    "merchant": "Amazon",
+    "price_now": 4.34,
+    "price_was": 6.39,
+    "category": "food-storage",
+    "why": "An 8 oz bag of probiotic granola is $4.34, down from $6.39.",
+    "url": "https://www.amazon.com/dp/B01FOMPJ18",
+    "curated": false,
+    "posted": "2026-09-21"
   }
 ]
