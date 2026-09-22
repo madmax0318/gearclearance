@@ -8,6 +8,7 @@
     "category": "ammo",
     "why": "About 26¢ a round for brass-case FMJ. Big-box counters have been closer to 36¢ on the same 250-round pack.",
     "url": "https://www.targetsportsusa.com/federal-american-eagle-9mm-ammo-115-grain-ammo-full-metal-jacket-ae9dp-p-660.aspx",
+    "image": "images/deals/federal-american-eagle-9mm-250.jpg",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -20,6 +21,7 @@
     "category": "household",
     "why": "Enough stored power for phones, a radio, and a small fan. Anker’s own price has been sitting near $280.",
     "url": "https://www.ankersolix.com/ca/products/521",
+    "image": "images/deals/anker-521-power-station.jpg",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -45,6 +47,7 @@
     "category": "accessories",
     "why": "The default 1,000-lumen weapon light on a lot of builds. A used HL-X under $90 sits below the usual street price for a new one.",
     "url": "https://www.midwayusa.com/product/1018571930",
+    "image": "images/deals/streamlight-protac-hl-x.jpg",
     "tags": ["used"],
     "curated": true,
     "posted": "2026-09-20"
@@ -83,6 +86,7 @@
     "category": "food-storage",
     "why": "A one-person 30-day bucket under $120. The same kit has been listing closer to $170.",
     "url": "https://www.beprepared.com/products/emergency-food-supply-30-days",
+    "image": "images/deals/augason-farms-30-day.jpg",
     "curated": true,
     "posted": "2026-09-18"
   },
@@ -95,6 +99,7 @@
     "category": "ammo",
     "why": "Defensive 9mm rarely prints under $1 a round. This box does, and it is not tied to a bulk-club login.",
     "url": "https://www.midwayusa.com/product/100157068",
+    "image": "images/deals/hornady-critical-defense-9mm-25.jpg",
     "curated": false,
     "posted": "2026-09-18"
   },
@@ -107,6 +112,7 @@
     "category": "guns",
     "why": "Used wood-stock carbine, not a rebate bundle. Everyday new pricing has been stuck just over $300.",
     "url": "https://www.sportsmans.com/shooting-gear-gun-supplies/rifles/ruger-1022-carbine-22-long-rifle-satin-blackhardwood-semi-automatic-rifle-185in/p/301829",
+    "image": "images/deals/ruger-10-22-carbine.jpg",
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-17"
@@ -218,6 +224,7 @@
     "category": "accessories",
     "why": "Padded Vickers slings rarely print under $55. This is the standard black sling, not a closeout colorway.",
     "url": "https://www.primaryarms.com/blue-force-gear-vickers-padded-push-button-sling-black",
+    "image": "images/deals/blue-force-gear-vickers-sling.jpg",
     "curated": false,
     "posted": "2026-09-09"
   },
@@ -230,6 +237,7 @@
     "category": "food-storage",
     "why": "Bags and absorbers in one carton for dry staples. Buying the two pieces separately has been landing near $50.",
     "url": "https://packfreshusa.com/gallon-7-mil-premium-century-mylar-bags-and-oxygen-absorbers/",
+    "image": "images/deals/packfreshusa-mylar-gallon-50.jpg",
     "curated": false,
     "posted": "2026-09-08"
   },
@@ -254,6 +262,7 @@
     "category": "gaming",
     "why": "OLED 512GB decks rarely move off the $549 shelf price. A hundred off is the cut that shows up in the gaming aisle.",
     "url": "https://store.steampowered.com/steamdeck/",
+    "image": "images/deals/steam-deck-oled-512.jpg",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -266,6 +275,7 @@
     "category": "gaming",
     "why": "The wireless G502 X has been holding near $140. This used unit is under $90, not a refurbished mystery SKU.",
     "url": "https://www.logitechg.com/en-us/shop/p/g502-x-wireless-lightforce",
+    "image": "images/deals/logitech-g502-x-lightspeed.jpg",
     "tags": ["used"],
     "curated": false,
     "posted": "2026-09-18"
@@ -304,6 +314,7 @@
     "category": "apparel",
     "why": "Sale colors of this Rain Defender jacket start at $78.77. The previous tag on the same shell runs up to $139.99.",
     "url": "https://www.sportsmans.com/workwear/workwear-coats-jackets/carhartt-mens-rain-defender-lightweight-insulated-jacket/p/p302367",
+    "image": "images/deals/carhartt-rain-defender-jacket.jpg",
     "curated": true,
     "posted": "2026-09-21"
   },
@@ -316,6 +327,7 @@
     "category": "apparel",
     "why": "Waterproof mid hikers at $41.77. The same Gale Peak pair was listed at $74.99.",
     "url": "https://www.sportsmans.com/footwear-outdoor-casual-men-women-youth/mens-hiking-boots/sportsmans-warehouse-mens-gale-peak-waterproof-mid-hiking-boots/p/p310987",
+    "image": "images/deals/gale-peak-waterproof-hiking-boots.jpg",
     "curated": false,
     "posted": "2026-09-16"
   },
@@ -328,6 +340,7 @@
     "category": "apparel",
     "why": "A thin shooters glove under $28. The same pair was $49.99 before this cut.",
     "url": "https://www.sportsmans.com/clothing-outdoor-casual-men-women-youth/accessories/hats-gloves/killik-mens-precision-shooters-glove/p/p303150",
+    "image": "images/deals/killik-precision-shooters-glove.jpg",
     "curated": false,
     "posted": "2026-09-15"
   },
@@ -340,6 +353,7 @@
     "category": "apparel",
     "why": "Merino long-sleeve base layer at $59.77, down from $79.99. A field layer, not a gym shirt.",
     "url": "https://www.sportsmans.com/clothing-outdoor-casual-men-women-youth/base-layers/base-layer-tops/killik-mens-merino-long-sleeve-base-layer-shirt/p/p313652",
+    "image": "images/deals/killik-merino-base-layer-shirt.jpg",
     "curated": false,
     "posted": "2026-09-12"
   },
@@ -352,6 +366,7 @@
     "category": "apparel",
     "why": "Traverse beanie in Waterfowl Marsh at $18.77. It was $35 before the markdown.",
     "url": "https://www.sportsmans.com/hunting-headwear/sitka-traverse-beanie-waterfowl-marsh-one-size-fits-most/p/1720459",
+    "image": "images/deals/sitka-traverse-beanie.jpg",
     "curated": false,
     "posted": "2026-09-09"
   },
@@ -364,6 +379,7 @@
     "category": "household",
     "why": "A 4-pack of Energizer MAX C batteries is $5.49, down from $9.17.",
     "url": "https://www.amazon.com/dp/B000YHWDQS",
+    "image": "images/deals/pd-energizer-max-c-batteries-4-pack.jpg",
     "curated": false,
     "posted": "2026-09-21"
   },
@@ -388,6 +404,7 @@
     "category": "household",
     "why": "A 12-pack of Scott ComfortPlus mega rolls is $5.40, down from $8.45.",
     "url": "https://www.amazon.com/dp/B0DKKPRGWL",
+    "image": "images/deals/pd-scott-comfortplus-mega-rolls-12-pack.jpg",
     "curated": false,
     "posted": "2026-09-21"
   },
@@ -400,6 +417,7 @@
     "category": "household",
     "why": "18-inch log skidding tongs are $20.97, down from $35.90.",
     "url": "https://www.amazon.com/dp/B0CDW62Y5X",
+    "image": "images/deals/pd-vevor-18-log-skidding-tongs.jpg",
     "curated": false,
     "posted": "2026-09-21"
   },
@@ -412,6 +430,7 @@
     "category": "household",
     "why": "A heavy-duty 6-inch griddle scraper is $5.69, down from $9.99.",
     "url": "https://www.amazon.com/dp/B085CLLX4M",
+    "image": "images/deals/pd-blackstone-6-griddle-scraper.jpg",
     "curated": false,
     "posted": "2026-09-21"
   },
@@ -424,6 +443,7 @@
     "category": "food-storage",
     "why": "A 25 oz smoked BBQ rub is $5.11, down from $10.93.",
     "url": "https://www.amazon.com/dp/B08H66JD3H",
+    "image": "images/deals/pd-amazon-grocery-smoked-bbq-rub-25-oz.jpg",
     "curated": false,
     "posted": "2026-09-21"
   },
@@ -448,6 +468,7 @@
     "category": "food-storage",
     "why": "An 8 oz bag of probiotic granola is $4.34, down from $6.39.",
     "url": "https://www.amazon.com/dp/B01FOMPJ18",
+    "image": "images/deals/pd-purely-elizabeth-probiotic-granola-8-oz.jpg",
     "curated": false,
     "posted": "2026-09-21"
   },
@@ -460,6 +481,7 @@
     "category": "optics",
     "why": "A Warne Maxlite MSR 30mm cantilever mount, 0 MOA, is $52.24, down from $99.99.",
     "url": "https://www.primaryarms.com/warne-maxlite-msr-cantilever-scope-mount-30mm-0-moa-black-anodized",
+    "image": "images/deals/warne-maxlite-msr-30mm-0-moa.jpg",
     "curated": false,
     "posted": "2026-09-22"
   },
@@ -472,6 +494,7 @@
     "category": "optics",
     "why": "Trijicon RMR Type 2 in FDE, 3.25 MOA, is $489.99, down from $589.99.",
     "url": "https://www.primaryarms.com/trijicon-rmr-type-2-led-reflex-sight-3.25-moa-fde",
+    "image": "images/deals/trijicon-rmr-type-2-fde-3-25.jpg",
     "curated": false,
     "posted": "2026-09-22"
   },
@@ -484,6 +507,7 @@
     "category": "guns",
     "why": "Troy's 5.56 11.5-inch A4 complete upper is $751.21, down from $899.99.",
     "url": "https://www.primaryarms.com/troy-industries-5-56-upper-receiver-kit-w-sights-a3-gen-2-socc-11-5in",
+    "image": "images/deals/troy-556-11-5-a4-upper.jpg",
     "curated": false,
     "posted": "2026-09-22"
   },
@@ -496,6 +520,7 @@
     "category": "guns",
     "why": "Primary Arms shows $2,656.30 in the cart for this 20-inch 22 ARC Stratomatch, down from $3,250.00.",
     "url": "https://www.primaryarms.com/geissele-automatics-freedom-rifle-stratomatch-22-arc-ar-15-rifle-20in-ddc",
+    "image": "images/deals/geissele-stratomatch-22-arc-20.jpg",
     "curated": false,
     "posted": "2026-09-22"
   },
@@ -508,6 +533,7 @@
     "category": "accessories",
     "why": "Primary Arms shows $257.72 in the cart for the Geissele 2-stage AK-X trigger, down from $355.00.",
     "url": "https://www.primaryarms.com/geissele-automatics-2-stage-ak-trigger",
+    "image": "images/deals/geissele-2-stage-ak-x-trigger.jpg",
     "curated": false,
     "posted": "2026-09-22"
   },
