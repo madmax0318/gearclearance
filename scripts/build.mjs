@@ -167,6 +167,8 @@ const OG_ALT = `${SITE_NAME} — ${TAGLINE}`;
 const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M2.5 8.5h27v4.2h-27z" fill="currentColor"/><rect x="4.2" y="12.7" width="23.6" height="12.8" rx="1.6" fill="#3d4a32" stroke="currentColor" stroke-width="1.8"/><rect x="11.6" y="16.4" width="8.8" height="5.4" rx="1" fill="#d4a017"/></svg>`;
 
 const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3.2 3.2h5.1v1.4H4.6v6.8h6.8V7.7h1.4v5.1H3.2V3.2z"/><path fill="currentColor" d="M8.2 2.4h5.4V7.8h-1.4V4.8L7.4 9.6 6.4 8.6l4.8-4.8H8.2V2.4z"/></svg>`;
+const THUMB_MARK = `<svg class="thumb-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M2.5 8.5h27v4.2h-27z" fill="currentColor"/><rect x="4.2" y="12.7" width="23.6" height="12.8" rx="1.6" fill="#3d4a32" stroke="currentColor" stroke-width="1.8"/><rect x="11.6" y="16.4" width="8.8" height="5.4" rx="1" fill="#d4a017"/></svg>`;
+const IMAGE_RE = /^images\/deals\/[a-z0-9]+(?:-[a-z0-9]+)*\.(jpg|jpeg|png|webp)$/;
 
 function esc(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -290,6 +292,20 @@ function loadDeals() {
         seen.add(tag);
       }
     }
+    if (deal.image != null && deal.image !== "") {
+      if (typeof deal.image !== "string" || !IMAGE_RE.test(deal.image)) {
+        throw new Error(`Image must be a local images/deals file on ${deal.slug}`);
+      }
+      if (path.basename(deal.image, path.extname(deal.image)) !== deal.slug) {
+        throw new Error(`Image filename must match the slug on ${deal.slug}`);
+      }
+      const imageFile = path.join(rootDir, "public", deal.image);
+      if (!fs.existsSync(imageFile)) throw new Error(`Missing image file for ${deal.slug}`);
+      const bytes = fs.statSync(imageFile).size;
+      if (bytes < 800 || bytes > 400_000) {
+        throw new Error(`Image for ${deal.slug} must be between 800 bytes and 400KB`);
+      }
+    }
   }
   for (const category of CATEGORIES) {
     if (!deals.some((deal) => deal.category === category.id)) {
@@ -346,11 +362,27 @@ function renderPriceRow(deal) {
   </div>`;
 }
 
+function hasImage(deal) {
+  return typeof deal.image === "string" && deal.image !== "";
+}
+
+function renderThumb(deal, depth, { linked = true } = {}) {
+  if (!hasImage(deal)) {
+    return `<div class="thumb thumb-empty">${THUMB_MARK}<span class="thumb-label">No photo</span></div>`;
+  }
+  const img = `<img src="${esc(href(depth, deal.image))}" alt="${linked ? "" : esc(`Product photo of ${deal.title}`)}" width="720" height="540" loading="${linked ? "lazy" : "eager"}" decoding="async">`;
+  if (!linked) return `<div class="thumb">${img}</div>`;
+  // The title link is the accessible name. This repeat is pointer-only.
+  return `<a class="thumb" href="${href(depth, `deals/${deal.slug}/`)}" tabindex="-1" aria-hidden="true">${img}</a>`;
+}
+
 function renderCard(deal, depth, heading) {
   const category = categoryById(deal.category);
   const tag = heading === "h3" ? "h3" : "h2";
   const tags = dealTags(deal).join(" ");
   return `<article class="card" data-tags="${esc(tags)}">
+  ${renderThumb(deal, depth)}
+  <div class="card-body">
   <div class="card-top">
     <a class="cat-link" href="${href(depth, `${category.slug}/`)}">${esc(category.name)}</a>
     ${deal.curated ? '<span class="pill">Curated</span>' : ""}
@@ -361,6 +393,7 @@ function renderCard(deal, depth, heading) {
   ${renderPriceRow(deal)}
   <p class="why">${esc(deal.why)}</p>
   <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
+  </div>
 </article>`;
 }
 
@@ -611,6 +644,7 @@ function dealPage(deal, allDeals) {
   </nav>
   <article class="deal-hero">
     <div class="deal-copy">
+      ${renderThumb(deal, depth, { linked: false })}
       <p class="eyebrow">${esc(category.name)}${deal.curated ? " · Curated" : ""}</p>
       ${renderTagBadges(deal)}
       <h1>${esc(deal.title)}</h1>
@@ -635,6 +669,7 @@ function dealPage(deal, allDeals) {
       name: deal.title,
       description: deal.why,
       category: category.name,
+      ...(hasImage(deal) ? { image: `${SITE}/${deal.image}` } : {}),
       mainEntityOfPage: canonical,
       offers: {
         "@type": "Offer",
@@ -804,6 +839,10 @@ function build() {
   }
   copyFile(path.join(rootDir, "public", "_headers"), "_headers");
   copyFile(path.join(rootDir, "public", "avantlink_confirmation.txt"), "avantlink_confirmation.txt");
+  for (const deal of deals) {
+    if (!hasImage(deal)) continue;
+    copyFile(path.join(rootDir, "public", deal.image), deal.image);
+  }
 
   const fontDir = path.join(rootDir, "src", "fonts");
   for (const name of fs.readdirSync(fontDir)) {
@@ -947,6 +986,34 @@ function build() {
   }
   if (!home.includes('data-tag="used"') || !home.includes('data-tag="police-trade-in"') || !home.includes('class="tag"')) {
     throw new Error("Home page is missing condition tag filters or badges");
+  }
+  const placeholder = renderThumb({ title: "Sample", slug: "sample" }, 0);
+  if (!placeholder.includes("thumb-empty") || placeholder.includes("<img")) {
+    throw new Error("Missing-image cards must render a placeholder, not an image");
+  }
+  if (!home.includes('class="thumb"')) {
+    throw new Error("Home cards must render a product thumbnail frame");
+  }
+  if (deals.some((deal) => !hasImage(deal)) && !home.includes('class="thumb thumb-empty"')) {
+    throw new Error("Deals without an image must render the no-photo placeholder");
+  }
+  if (/<img[^>]+src="https?:/i.test(home) || /<img[^>]+src="\/\//i.test(home)) {
+    throw new Error("Card images must be same-origin files, not remote URLs");
+  }
+  const imaged = deals.filter(hasImage);
+  if (imaged.length < 12) throw new Error("Expected a sample of self-hosted product thumbnails");
+  for (const deal of imaged) {
+    if (!fs.existsSync(path.join(distDir, deal.image))) {
+      throw new Error(`Thumbnail ${deal.image} was not copied into dist/`);
+    }
+  }
+  const gunsImaged = deals.find((deal) => deal.category === "guns" && hasImage(deal));
+  if (gunsImaged && !guns.includes(`../${gunsImaged.image}`)) {
+    throw new Error("Aisle cards must resolve thumbnail paths relative to the page");
+  }
+  const imagedPage = fs.readFileSync(path.join(distDir, "deals", imaged[0].slug, "index.html"), "utf8");
+  if (!imagedPage.includes(`../../${imaged[0].image}`) || !imagedPage.includes(`${SITE}/${imaged[0].image}`)) {
+    throw new Error("Deal pages must resolve the thumbnail and include it in Product JSON-LD");
   }
   if (home.includes("Used</span></a>") || /nav-link[^>]*>[^<]*Used/.test(home)) {
     throw new Error("Condition tags must not be sidebar categories");
