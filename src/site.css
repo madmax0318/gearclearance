@@ -544,6 +544,11 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.now.is-unpriced {
+  font-size: 1.45rem;
+  letter-spacing: 0.02em;
+}
+
 .was {
   margin: 0;
   color: var(--muted);

@@ -197,6 +197,19 @@ function percentOff(now, was) {
   return Math.round((1 - now / was) * 100);
 }
 
+function hasListedPrice(deal) {
+  return typeof deal.price_now === "number" && typeof deal.price_was === "number";
+}
+
+function trackingParam(key, value) {
+  const name = String(key).toLowerCase();
+  const val = String(value).toLowerCase();
+  if (name === "tag" || name === "linkid" || name === "link_id") return true;
+  if (name.startsWith("utm_")) return true;
+  if ((name === "ref_" || name === "ref") && val.startsWith("as_li")) return true;
+  return false;
+}
+
 function formatDate(iso) {
   return dateFmt.format(new Date(`${iso}T00:00:00Z`));
 }
@@ -229,8 +242,8 @@ function byNewest(a, b) {
 function loadDeals() {
   const file = path.join(rootDir, "data", "deals.json");
   const deals = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (!Array.isArray(deals) || deals.length < 12 || deals.length > 30) {
-    throw new Error(`Expected 12–30 deals, found ${deals.length}`);
+  if (!Array.isArray(deals) || deals.length < 12 || deals.length > 48) {
+    throw new Error(`Expected 12–48 deals, found ${deals.length}`);
   }
   const slugs = new Set();
   for (const deal of deals) {
@@ -241,10 +254,11 @@ function loadDeals() {
     if (slugs.has(deal.slug)) throw new Error(`Duplicate slug: ${deal.slug}`);
     slugs.add(deal.slug);
     if (!categoryById(deal.category)) throw new Error(`Unknown category ${deal.category}`);
-    if (typeof deal.price_now !== "number" || typeof deal.price_was !== "number") {
-      throw new Error(`Prices must be numbers on ${deal.slug}`);
+    const priceMissing = deal.price_now == null && deal.price_was == null;
+    if (!priceMissing && !hasListedPrice(deal)) {
+      throw new Error(`Prices must be numbers or both null on ${deal.slug}`);
     }
-    if (!(deal.price_was > deal.price_now && deal.price_now > 0)) {
+    if (hasListedPrice(deal) && !(deal.price_was > deal.price_now && deal.price_now > 0)) {
       throw new Error(`Price must drop on ${deal.slug}`);
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deal.posted) || Number.isNaN(Date.parse(`${deal.posted}T00:00:00Z`))) {
@@ -257,6 +271,11 @@ function loadDeals() {
       throw new Error(`Bad url on ${deal.slug}`);
     }
     if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
+    for (const [key, value] of parsed.searchParams.entries()) {
+      if (trackingParam(key, value)) {
+        throw new Error(`Tracking param ${key} on ${deal.slug}`);
+      }
+    }
     const host = parsed.hostname.toLowerCase();
     if (host === "example.com" || host.endsWith(".example.com") || host === "gearclearance.mcdaniel.fyi") {
       throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
@@ -313,9 +332,22 @@ function renderTagFilters(deals) {
 </div>`;
 }
 
+function renderPriceRow(deal) {
+  if (!hasListedPrice(deal)) {
+    return `<div class="price-row">
+    <p class="now is-unpriced"><span class="sr-only">Price </span>Sale page</p>
+  </div>`;
+  }
+  const pct = percentOff(deal.price_now, deal.price_was);
+  return `<div class="price-row">
+    <p class="now"><span class="sr-only">Price now </span>${esc(money(deal.price_now))}</p>
+    <p class="was"><span class="sr-only">Was </span><s>${esc(money(deal.price_was))}</s></p>
+    <p class="off">${pct}% off</p>
+  </div>`;
+}
+
 function renderCard(deal, depth, heading) {
   const category = categoryById(deal.category);
-  const pct = percentOff(deal.price_now, deal.price_was);
   const tag = heading === "h3" ? "h3" : "h2";
   const tags = dealTags(deal).join(" ");
   return `<article class="card" data-tags="${esc(tags)}">
@@ -326,11 +358,7 @@ function renderCard(deal, depth, heading) {
   ${renderTagBadges(deal)}
   <${tag} class="card-title"><a href="${href(depth, `deals/${deal.slug}/`)}">${esc(deal.title)}</a></${tag}>
   <p class="merchant">${esc(deal.merchant)} · <time datetime="${esc(deal.posted)}">Listed ${esc(formatDate(deal.posted))}</time></p>
-  <div class="price-row">
-    <p class="now"><span class="sr-only">Price now </span>${esc(money(deal.price_now))}</p>
-    <p class="was"><span class="sr-only">Was </span><s>${esc(money(deal.price_was))}</s></p>
-    <p class="off">${pct}% off</p>
-  </div>
+  ${renderPriceRow(deal)}
   <p class="why">${esc(deal.why)}</p>
   <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
 </article>`;
@@ -549,11 +577,16 @@ function dealPage(deal, allDeals) {
   const category = categoryById(deal.category);
   const depth = 2;
   const canonical = `${SITE}/deals/${deal.slug}/`;
-  const pct = percentOff(deal.price_now, deal.price_was);
+  const listed = hasListedPrice(deal);
+  const pct = listed ? percentOff(deal.price_now, deal.price_was) : null;
   const description = clip(
-    `${deal.title} is ${money(deal.price_now)} at ${deal.merchant} (was ${money(deal.price_was)}, ${pct}% off). ${deal.why}`,
+    listed
+      ? `${deal.title} is ${money(deal.price_now)} at ${deal.merchant} (was ${money(deal.price_was)}, ${pct}% off). ${deal.why}`
+      : `${deal.title} is a sale page at ${deal.merchant}. ${deal.why}`,
   );
-  const title = `${deal.title} — ${money(deal.price_now)} | ${SITE_NAME}`;
+  const title = listed
+    ? `${deal.title} — ${money(deal.price_now)} | ${SITE_NAME}`
+    : `${deal.title} | ${SITE_NAME}`;
   const related = allDeals.filter((item) => item.category === deal.category && item.slug !== deal.slug).slice(0, 3);
   const ffl =
     deal.category === "guns"
@@ -585,11 +618,7 @@ function dealPage(deal, allDeals) {
     </div>
     <div class="buy-box">
       <p class="merchant">${esc(deal.merchant)} · <time datetime="${esc(deal.posted)}">Listed ${esc(formatDate(deal.posted))}</time></p>
-      <div class="price-row">
-        <p class="now"><span class="sr-only">Price now </span>${esc(money(deal.price_now))}</p>
-        <p class="was"><span class="sr-only">Was </span><s>${esc(money(deal.price_was))}</s></p>
-        <p class="off">${pct}% off</p>
-      </div>
+      ${renderPriceRow(deal)}
       <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
       <p class="fine-note">Confirm the price on the merchant site. The button leaves ${SITE_NAME}.</p>
       ${ffl}
@@ -610,8 +639,9 @@ function dealPage(deal, allDeals) {
       offers: {
         "@type": "Offer",
         url: deal.url,
-        priceCurrency: "USD",
-        price: deal.price_now.toFixed(2),
+        ...(listed
+          ? { priceCurrency: "USD", price: deal.price_now.toFixed(2) }
+          : {}),
         priceValidUntil: plusDays(deal.posted, 30),
         availability: "https://schema.org/InStock",
         itemCondition: dealTags(deal).some((id) => id === "used" || id === "police-trade-in")
