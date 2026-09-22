@@ -5,10 +5,13 @@
   "type": "module",
   "description": "The Stash Deals parking-lot pipeline for Ion Cannon. Collect → Clean → Wrap → Review → Publish. Not used by the static site build.",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "test": "node --test",
     "parse": "node src/cli.js parse"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3"
   }
 }

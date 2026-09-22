@@ -4,6 +4,13 @@ export { cleanUrl, inspectUrl, merchantDomain } from "./clean-url.js";
 export { findMerchant, loadMerchantMap, parseCsv } from "./merchant-map.js";
 export { ollamaExtract, parseModelJson } from "./ollama.js";
 export { decodeMessage, parseEmail, parseEmailFile } from "./parse-email.js";
+export {
+  HIST_DEAL_THRESHOLD,
+  applyPriceHistory,
+  lookup,
+  recordSnapshot,
+} from "./price-history.js";
+export { DEFAULT_DB_PATH, migratePriceDb, openPriceDb, resolveDbPath } from "./price-history-db.js";
 export { decidePublish, publishCandidate, STANDING_PUBLISH_NOTE } from "./publish.js";
 export { draftQueue } from "./run.js";
 export { assertCandidateShape, CANDIDATE_FIELDS, candidateRow } from "./schema.js";
