@@ -4,9 +4,9 @@ Static prototype of an affiliate deal aggregator. Cards link out to merchants. T
 
 **Tagline:** Grow your stash without shrinking your wallet.
 
-**Public domain (intended):** [thestash.deals](https://thestash.deals)
+**Public site:** [thestash.deals](https://thestash.deals)
 
-**Prototype host:** [gearclearance.mcdaniel.fyi](https://gearclearance.mcdaniel.fyi) on Cloudflare Pages. The published site is the `dist/` folder from `npm run build`. Canonical URLs, the sitemap, and JSON-LD still use the prototype host until thestash.deals is the live hostname. The Pages build does not run email ingest, a scraper, or a live affiliate API. Optional Ion Cannon drafts live in `pipeline/` and are separate from `npm run build`.
+The published site is the `dist/` folder from `npm run build`. Canonical URLs, Open Graph, Twitter, JSON-LD, the sitemap, and `robots.txt` use `https://thestash.deals`. The former prototype hostname is retired. The Pages build does not run email ingest, a scraper, or a live affiliate API. Optional Ion Cannon drafts live in `pipeline/` and are separate from `npm run build`.
 
 ## Local preview
 
@@ -33,19 +33,9 @@ The build writes HTML, CSS, a small menu script, fonts, `sitemap.xml`, `robots.t
 
 ### Custom domain
 
-The intended public domain is `thestash.deals`. This prototype still publishes on `gearclearance.mcdaniel.fyi`.
+The public hostname is `thestash.deals`. Canonicals, the sitemap, and structured data use that host only.
 
-Add `gearclearance.mcdaniel.fyi` as a custom domain on the Pages project.
-
-DNS for that hostname is a **CNAME**:
-
-| Name | Type | Target |
-| --- | --- | --- |
-| `gearclearance` | CNAME | the project's `*.pages.dev` hostname (shown in the Pages dashboard, for example `gear-clearance.pages.dev`) |
-
-If `mcdaniel.fyi` is already on Cloudflare DNS, adding the custom domain in Pages can create that CNAME for you. Leave the record proxied. Wait until the certificate is active, then open https://gearclearance.mcdaniel.fyi.
-
-This is a subdomain, so a CNAME is the right record. Do not move the zone apex for this prototype. Point `thestash.deals` at the same Pages project when that hostname is ready; until then, keep the prototype CNAME above.
+`gearclearance.mcdaniel.fyi` is retired. This repository does not remove a Cloudflare Pages custom domain. If that hostname is still attached to the Pages project, remove it in the Cloudflare Pages custom-domain settings.
 
 ## Information architecture
 
@@ -56,11 +46,12 @@ Left sidebar, in order:
 3. Ammo — `/ammo/`
 4. Optics — `/optics/`
 5. Accessories — `/accessories/`
-6. Food storage — `/food-storage/`
-7. Survival — `/survival/`
-8. Household goods — `/household/`
-9. Gaming — `/gaming/`
-10. Drones — `/drones/`
+6. Apparel — `/apparel/`
+7. Food storage — `/food-storage/`
+8. Survival — `/survival/`
+9. Household goods — `/household/`
+10. Gaming — `/gaming/`
+11. Drones — `/drones/`
 
 **Curated** sits on a lower rail with a badge. `/curated/` is a placeholder for hand-picked tips.
 
@@ -68,9 +59,9 @@ On a narrow screen the same list is a drawer (the Menu control). The menu opens 
 
 Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD. Listing pages are real HTML, not an empty app shell.
 
-## Sample data
+## Deal data
 
-`data/deals.json` holds 24 fictional deals covering all nine aisles. Affiliate URLs are `https://example.com/out/...` and render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
+`data/deals.json` holds 29 deals covering all ten aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters. They render with `rel="sponsored noopener noreferrer"`. Edit the JSON and rebuild to change the board.
 
 A deal may include an optional `tags` array of condition or source ids. Tags are not sidebar aisles. Known tags:
 
@@ -113,7 +104,7 @@ Below roughly 48px the illustration stops reading, so the mobile topbar and `fav
 
 ## Layout
 
-- `data/deals.json` — sample deals
+- `data/deals.json` — deal records
 - `scripts/build.mjs` — writes `dist/`
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts

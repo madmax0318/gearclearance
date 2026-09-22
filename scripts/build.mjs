@@ -7,8 +7,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const distDir = path.join(rootDir, "dist");
 const SITE_NAME = "The Stash Deals";
 const TAGLINE = "Grow your stash without shrinking your wallet.";
-// Canonicals stay on the prototype host. Intended public domain is https://thestash.deals (see README).
-const SITE = "https://gearclearance.mcdaniel.fyi";
+const SITE = "https://thestash.deals";
 
 const CATEGORIES = [
   {
@@ -46,6 +45,15 @@ const CATEGORIES = [
     eyebrow: "Accessories",
     description:
       "Deals on magazines, lights, and slings, with pack versus single pricing called out in the title.",
+  },
+  {
+    id: "apparel",
+    slug: "apparel",
+    name: "Apparel",
+    h1: "Apparel deals",
+    eyebrow: "Apparel",
+    description:
+      "Jackets, boots, gloves, baselayers, and hats. Each card shows the merchant, the previous price, and why the markdown is listed.",
   },
   {
     id: "food-storage",
@@ -100,8 +108,8 @@ const HOME = {
   eyebrow: "Latest across every aisle",
   title: "Latest deals | The Stash Deals",
   description:
-    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones.",
-  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
+    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, apparel, food storage, survival, household goods, gaming, and drones.",
+  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, apparel, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
 };
 
 const CURATED = {
@@ -143,6 +151,7 @@ const OG_IMAGE = "brand/stash-deals-og.jpg";
 const APPLE_ICON = "brand/apple-touch-icon.png";
 const OG_ALT = `${SITE_NAME} — ${TAGLINE}`;
 // Crate mark for the places the illustration is too small to read: mobile topbar and favicon.
+// Drawn from the poster's ammo crates, so it is brand art rather than a generic placeholder.
 const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M2.5 8.5h27v4.2h-27z" fill="currentColor"/><rect x="4.2" y="12.7" width="23.6" height="12.8" rx="1.6" fill="#3d4a32" stroke="currentColor" stroke-width="1.8"/><rect x="11.6" y="16.4" width="8.8" height="5.4" rx="1" fill="#d4a017"/></svg>`;
 
 const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3.2 3.2h5.1v1.4H4.6v6.8h6.8V7.7h1.4v5.1H3.2V3.2z"/><path fill="currentColor" d="M8.2 2.4h5.4V7.8h-1.4V4.8L7.4 9.6 6.4 8.6l4.8-4.8H8.2V2.4z"/></svg>`;
@@ -236,6 +245,10 @@ function loadDeals() {
       throw new Error(`Bad url on ${deal.slug}`);
     }
     if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
+    const host = parsed.hostname.toLowerCase();
+    if (host === "example.com" || host.endsWith(".example.com") || host === "gearclearance.mcdaniel.fyi") {
+      throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
+    }
     if (typeof deal.curated !== "boolean") throw new Error(`curated must be boolean on ${deal.slug}`);
     if (deal.tags !== undefined) {
       if (!Array.isArray(deal.tags)) throw new Error(`tags must be an array on ${deal.slug}`);
@@ -397,6 +410,7 @@ ${canonical ? `<meta property="og:url" content="${esc(canonical)}">` : ""}
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${esc(OG_ALT)}">
 <meta name="twitter:card" content="summary_large_image">
+${canonical ? `<meta name="twitter:url" content="${esc(canonical)}">` : ""}
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${SITE}/${OG_IMAGE}">
@@ -759,6 +773,39 @@ function build() {
   if (!home.includes("Affiliate disclosure") || !home.includes("Guns") || !home.includes('rel="sponsored noopener noreferrer"')) {
     throw new Error("Home page is missing disclosure, navigation, or sponsored links");
   }
+  if (!home.includes('<link rel="canonical" href="https://thestash.deals/">')) {
+    throw new Error("Home canonical must be https://thestash.deals/");
+  }
+  if (!home.includes('<meta property="og:url" content="https://thestash.deals/">')) {
+    throw new Error("Home og:url must be https://thestash.deals/");
+  }
+  if (!home.includes('<meta name="twitter:url" content="https://thestash.deals/">')) {
+    throw new Error("Home twitter:url must be https://thestash.deals/");
+  }
+  const bannedHosts = ["gearclearance.mcdaniel.fyi", "example.com"];
+  function walkDist(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkDist(full);
+      else if (/\.(html|xml|txt)$/.test(entry.name)) {
+        const text = fs.readFileSync(full, "utf8");
+        for (const host of bannedHosts) {
+          if (text.includes(host)) {
+            throw new Error(`${path.relative(distDir, full)} still contains ${host}`);
+          }
+        }
+      }
+    }
+  }
+  walkDist(distDir);
+  const robots = fs.readFileSync(path.join(distDir, "robots.txt"), "utf8");
+  const sitemapXml = fs.readFileSync(path.join(distDir, "sitemap.xml"), "utf8");
+  if (!robots.includes("Sitemap: https://thestash.deals/sitemap.xml")) {
+    throw new Error("robots.txt sitemap must use https://thestash.deals");
+  }
+  if (!sitemapXml.includes("<loc>https://thestash.deals/</loc>")) {
+    throw new Error("sitemap loc must use https://thestash.deals");
+  }
   const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
   const sampleDeal = fs.readFileSync(path.join(distDir, "deals", deals[0].slug, "index.html"), "utf8");
   const impactCount = (html) => html.split(IMPACT_UTT).length - 1;
@@ -799,13 +846,20 @@ function build() {
     if (chrome.includes("brand-logo") || chrome.includes("topbar-logo") || chrome.includes(LOGO)) {
       throw new Error("Portrait poster must not appear in nav chrome");
     }
+    // The old placeholder was a triangle in a rounded square and was not brand art.
+    if (chrome.includes("M8 23.2 16 8.2l8 15")) {
+      throw new Error("Placeholder triangle mark must not return to nav chrome");
+    }
   }
-  // The sidebar has room for the illustration; the topbar does not, so it keeps the vector mark.
+  // The sidebar has room for the illustration; the topbar does not, so it keeps the crate mark.
   if (!sidebar.includes('class="brand-emblem"') || !sidebar.includes(EMBLEM)) {
     throw new Error("Sidebar brand is missing the emblem lockup");
   }
   if (!topbar.includes('class="mark"') || topbar.includes(EMBLEM)) {
-    throw new Error("Mobile topbar must use the vector mark, not the emblem image");
+    throw new Error("Mobile topbar must use the crate mark, not the emblem image");
+  }
+  if (!topbar.includes("#d4a017")) {
+    throw new Error("Topbar mark must be the brand crate mark, not a generic glyph");
   }
   if (!sidebar.includes(TAGLINE) || !sidebar.includes('class="brand-tag"')) {
     throw new Error("Sidebar brand is missing the tagline");
@@ -842,7 +896,7 @@ function build() {
     throw new Error("Condition tags must not be sidebar categories");
   }
   const nav = home.slice(home.indexOf('aria-label="Categories"'), home.indexOf('class="rail"'));
-  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
+  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Apparel", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
   let cursor = 0;
   for (const label of aisleOrder) {
     const at = nav.indexOf(`>${label}<`, cursor);

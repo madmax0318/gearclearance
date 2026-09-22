@@ -164,13 +164,13 @@ a {
   flex-direction: column;
   align-items: center;
   gap: 0.7rem;
-  text-align: center;
   text-decoration: none;
-  padding: 0.15rem 0.45rem;
+  text-align: center;
+  padding: 0.35rem 0.35rem 0.1rem;
 }
 
 /* The poster illustration only reads at this size, so the sidebar gets the art and the
-   narrow topbar gets the vector mark instead. */
+   narrow topbar gets the crate mark instead. */
 .brand-emblem {
   width: 7.25rem;
   height: auto;
