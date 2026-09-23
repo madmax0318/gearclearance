@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { onRequest } from "../../functions/api/report-expired.js";
+import { reportSlugs } from "../../functions/report-slugs.js";
 
 const TOKEN = "test-token";
 const ORIGIN = "https://thestash.deals";
@@ -121,26 +122,31 @@ test("an empty GitHub board does not invent slugs from the asset", async () => {
   );
 });
 
-test("same-origin report-slugs.json is used when ASSETS.fetch is missing", async () => {
+test("the build slug list is used when ASSETS.fetch is missing, without fetching this site", async () => {
+  const slug = reportSlugs[0];
+  assert.equal(typeof slug, "string");
+  assert.equal(reportSlugs.includes("still-live"), false);
   await withFetch(
     routeFetch({
       deals: () => {
         throw new TypeError("redirect mode is error");
       },
-      slugs: () => Response.json(["still-live", "Not A Slug", 12]),
+      slugs: () => {
+        throw new Error("same-origin /report-slugs.json must not be fetched");
+      },
     }),
     async (calls) => {
-      const response = await post({ slug: "still-live" }, { assets: {} });
+      const response = await post({ slug }, { assets: {} });
       assert.equal(response.status, 200);
       const body = await response.json();
       assert.equal(body.ok, true);
       assert.equal(body.stored, true);
       assert.equal(body.error, undefined);
 
-      const assetCall = calls.find((call) => call.url.includes("/report-slugs.json"));
-      assert.equal(assetCall.url, `${ORIGIN}/report-slugs.json`);
-      assert.equal(assetCall.method, "GET");
-      assert.equal(assetCall.authorization, null);
+      assert.equal(
+        calls.some((call) => call.url.includes("/report-slugs.json") || call.url.startsWith(ORIGIN)),
+        false,
+      );
       const githubCall = calls.find((call) => call.url.includes("/contents/data/deals.json"));
       assert.equal(githubCall.authorization, `Bearer ${TOKEN}`);
       assert.equal(
@@ -181,15 +187,18 @@ test("ASSETS binding supplies slugs before a same-origin fetch", async () => {
   );
 });
 
-test("a throwing ASSETS binding falls through to the published slug file", async () => {
+test("a throwing ASSETS binding falls through to the build slug list", async () => {
+  const slug = reportSlugs[0];
   await withFetch(
     routeFetch({
       deals: () => new Response("no", { status: 500 }),
-      slugs: () => Response.json(["still-live"]),
+      slugs: () => {
+        throw new Error("same-origin /report-slugs.json must not be fetched");
+      },
     }),
     async (calls) => {
       const response = await post(
-        { slug: "still-live" },
+        { slug },
         {
           assets: {
             async fetch() {
@@ -201,8 +210,8 @@ test("a throwing ASSETS binding falls through to the published slug file", async
       assert.equal(response.status, 200);
       assert.equal((await response.json()).error, undefined);
       assert.equal(
-        calls.some((call) => call.url === `${ORIGIN}/report-slugs.json`),
-        true,
+        calls.some((call) => call.url.includes("/report-slugs.json") || call.url.startsWith(ORIGIN)),
+        false,
       );
     },
   );
@@ -233,15 +242,88 @@ test("slug asset redirects are not followed", async () => {
       slugs: () => new Response(null, { status: 302, headers: { location: "https://evil.example/slugs.json" } }),
     }),
     async (calls) => {
-      const response = await post({ slug: "still-live" });
-      assert.equal(response.status, 503);
-      assert.deepEqual(await response.json(), {
-        ok: false,
-        error: "board_unavailable",
-        github: "github_board_failed",
-        asset: "slug_asset_failed",
-        github_status: 500,
-      });
+      const response = await post(
+        { slug: "still-live" },
+        {
+          assets: {
+            async fetch() {
+              return new Response(null, { status: 302, headers: { location: "https://evil.example/slugs.json" } });
+            },
+          },
+        },
+      );
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { ok: false, error: "unknown_deal" });
+      assert.equal(
+        calls.some((call) => call.url.includes("evil.example") || call.url.startsWith(ORIGIN)),
+        false,
+      );
+    },
+  );
+});
+
+test("GitHub and ASSETS failures still return JSON for a slug outside the build list", async () => {
+  await withFetch(
+    routeFetch({
+      deals: () => new Response("upstream", { status: 502 }),
+      slugs: () => new Response("<html>nope</html>", { status: 200, headers: { "content-type": "text/html" } }),
+    }),
+    async (calls) => {
+      const response = await post(
+        { slug: "still-live" },
+        {
+          assets: {
+            async fetch() {
+              return new Response("<html>nope</html>", { status: 200, headers: { "content-type": "text/html" } });
+            },
+          },
+        },
+      );
+      assert.equal(response.status, 404);
+      const body = await response.json();
+      assert.deepEqual(body, { ok: false, error: "unknown_deal" });
+      assert.equal(JSON.stringify(body).includes(TOKEN), false);
+      assert.equal(
+        calls.some((call) => call.method === "PUT" || call.url.startsWith(ORIGIN)),
+        false,
+      );
+    },
+  );
+});
+
+test("a thrown GitHub fetch returns JSON instead of escaping the handler", async () => {
+  const slug = reportSlugs[0];
+  await withFetch(
+    async ({ url }) => {
+      if (url.includes("api.github.com")) throw new TypeError("unexpected redirect");
+      if (url.startsWith(ORIGIN)) throw new Error("same-zone fetch must not run");
+      throw new Error(`unexpected fetch ${url}`);
+    },
+    async () => {
+      const response = await post({ slug }, { assets: {} });
+      assert.equal(response.headers.get("content-type"), "application/json; charset=utf-8");
+      const body = await response.json();
+      assert.equal(body.ok, false);
+      assert.equal(body.error, "github_unreachable");
+      assert.equal(JSON.stringify(body).includes(TOKEN), false);
+      assert.notEqual(response.status, 500);
+    },
+  );
+});
+
+test("GitHub redirects are not followed", async () => {
+  const slug = reportSlugs[0];
+  await withFetch(
+    routeFetch({
+      deals: () => new Response(null, { status: 302, headers: { location: "https://evil.example/deals.json" } }),
+      slugs: () => {
+        throw new Error("same-origin /report-slugs.json must not be fetched");
+      },
+    }),
+    async (calls) => {
+      const response = await post({ slug }, { assets: {} });
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).stored, true);
       assert.equal(
         calls.some((call) => call.url.includes("evil.example")),
         false,
@@ -250,30 +332,16 @@ test("slug asset redirects are not followed", async () => {
   );
 });
 
-test("both slug sources failing names github and the asset without secrets", async () => {
-  await withFetch(
-    routeFetch({
-      deals: () => new Response("upstream", { status: 502 }),
-      slugs: () => new Response("<html>nope</html>", { status: 200, headers: { "content-type": "text/html" } }),
+test("a missing env object returns queue_unconfigured JSON", async () => {
+  const response = await onRequest({
+    request: new Request(`${ORIGIN}/api/report-expired`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "still-live" }),
     }),
-    async (calls) => {
-      const response = await post({ slug: "still-live" });
-      assert.equal(response.status, 503);
-      const body = await response.json();
-      assert.deepEqual(body, {
-        ok: false,
-        error: "board_unavailable",
-        github: "github_board_failed",
-        asset: "slug_asset_failed",
-        github_status: 502,
-      });
-      assert.equal(JSON.stringify(body).includes(TOKEN), false);
-      assert.equal(
-        calls.some((call) => call.url.includes("expired-reports")),
-        false,
-      );
-    },
-  );
+  });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { ok: false, error: "queue_unconfigured" });
 });
 
 test("missing token and honeypot submissions do not read the board", async () => {

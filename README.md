@@ -104,7 +104,9 @@ Reports are stored in `data/expired-reports.json` (schema: `pipeline/schema/expi
 
 `ip_hash` is a salted hash, not a raw address. Reports with an empty hash share one reporter, so they cannot meet the threshold by themselves. `status` is `open`, `dismissed`, or `removed`.
 
-On Cloudflare Pages, `functions/api/report-expired.js` appends a row by committing that file through the GitHub Contents API. Set `GITHUB_TOKEN` (contents read/write on this repo) in the Pages project. Optional: `GITHUB_REPOSITORY` (`madmax0318/gearclearance`), `GITHUB_BRANCH` (`main`), and `REPORT_IP_SALT`. If the token is missing the endpoint returns `queue_unconfigured` and stores nothing. `npm run preview` writes the same file locally so the button can be tried without GitHub.
+On Cloudflare Pages, `functions/api/report-expired.js` appends a row by committing that file through the GitHub Contents API. Set `GITHUB_TOKEN` (contents read/write on this repo) in Cloudflare Pages → Settings → Environment variables for Production (and Preview, if preview deployments should accept reports). Optional: `GITHUB_REPOSITORY` (`madmax0318/gearclearance`), `GITHUB_BRANCH` (`main`), and `REPORT_IP_SALT`. If the token is missing or blank the endpoint returns `503` with `queue_unconfigured` and stores nothing. Keep the token in the Pages secret store only.
+
+Live slugs are taken from GitHub `data/deals.json` when that read returns a deal array. If it does not, the function tries the Pages `ASSETS` binding for `/report-slugs.json`, then the list `npm run build` writes to `functions/report-slugs.js` (the same slugs as `dist/report-slugs.json`). The function does not `fetch` this site’s own hostname; that same-zone subrequest aborted the Worker with Cloudflare error 1101. `npm run preview` writes the queue locally so the button can be tried without GitHub.
 
 A deal leaves the public board only after it is marked expired and the site is rebuilt. Two equivalent shapes both drop it from home, aisles, curated, deal pages, and the sitemap:
 
