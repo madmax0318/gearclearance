@@ -511,7 +511,15 @@ function renderChrome({ depth, activeId, deals, main }) {
 // Impact.com Universal Tracking Tag (account snippet P-A7822267). Permanent, every page.
 const IMPACT_UTT = `<script type="text/javascript">(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A7822267-c904-4255-a7d2-efe7698726ea1.js','script','impactStat',document,window);impactStat('transformLinks');impactStat('trackImpression');</script>`;
 
-function pageShell({ title, description, canonical, robots = "index, follow", ogType = "website", depth, json, body }) {
+// TEMP AvantLink ownership verify for application_id=1655829. Homepage only.
+// Strip path: delete this constant, stop passing avantlinkVerify, and restore the
+// build assertion that rejects classic.avantlink.com / "TEMP AvantLink" / app id
+// 1655057 on every page. Do that after verify succeeds at:
+// https://classic.avantlink.com/affiliate_app_confirm.php?mode=verify-js&application_id=1655829
+const AVANTLINK_OWNERSHIP_VERIFY = `<!-- TEMP AvantLink ownership verify app 1655829 — delete after successful verify -->
+<script type="text/javascript" src="https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=45db105505328ea31ad0aa12912acddeab0fe924"></script>`;
+
+function pageShell({ title, description, canonical, robots = "index, follow", ogType = "website", depth, json, body, avantlinkVerify = false }) {
   const blocks = json
     ? `\n<script type="application/ld+json">${jsonLd({ "@context": "https://schema.org", "@graph": json })}</script>`
     : "";
@@ -550,7 +558,7 @@ ${canonical ? `<meta name="twitter:url" content="${esc(canonical)}">` : ""}
 <input class="nav-toggle" id="nav-toggle" type="checkbox">
 ${body}
 <script src="${href(depth, JS_PATH)}"></script>
-${IMPACT_UTT}
+${IMPACT_UTT}${avantlinkVerify ? `\n${AVANTLINK_OWNERSHIP_VERIFY}` : ""}
 </body>
 </html>
 `;
@@ -655,6 +663,7 @@ function listingPage({ activeId, depth, canonicalPath, title, description, h1, e
     canonical: `${SITE}${canonicalPath}`,
     depth,
     json: graph,
+    avantlinkVerify: canonicalPath === "/",
     body: renderChrome({ depth, activeId, deals: allDeals, main }),
   });
 }
@@ -965,11 +974,41 @@ function build() {
   if (impactCount(home) !== 1 || impactCount(guns) !== 1 || impactCount(sampleDeal) !== 1) {
     throw new Error("Impact tracking tag must appear exactly once in the shared page shell");
   }
-  for (const html of [home, guns, sampleDeal]) {
-    if (html.includes("classic.avantlink.com") || html.includes("TEMP AvantLink") || html.includes("1655057")) {
-      throw new Error("Temporary AvantLink ownership verification script must not be injected");
+  // TEMP allowance for AvantLink application_id=1655829. Restore the blanket
+  // rejection (classic.avantlink.com / "TEMP AvantLink" / old app id 1655057 on
+  // every page) in the follow-up that deletes AVANTLINK_OWNERSHIP_VERIFY, after
+  // https://classic.avantlink.com/affiliate_app_confirm.php?mode=verify-js&application_id=1655829
+  const avantCount = (html) => html.split(AVANTLINK_OWNERSHIP_VERIFY).length - 1;
+  if (avantCount(home) !== 1) {
+    throw new Error("Homepage must include the temporary AvantLink ownership verification script exactly once");
+  }
+  if (!AVANTLINK_OWNERSHIP_VERIFY.includes("https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=45db105505328ea31ad0aa12912acddeab0fe924")) {
+    throw new Error("Temporary AvantLink verification script must use the https confirm URL");
+  }
+  function walkHtml(dir, rel = "") {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      const next = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        walkHtml(full, next);
+        continue;
+      }
+      if (!entry.name.endsWith(".html")) continue;
+      const text = fs.readFileSync(full, "utf8");
+      const count = avantCount(text);
+      if (next === "index.html") {
+        if (count !== 1) {
+          throw new Error("Homepage must include the temporary AvantLink ownership verification script exactly once");
+        }
+      } else if (count !== 0 || text.includes("classic.avantlink.com") || text.includes("TEMP AvantLink")) {
+        throw new Error(`${next} must not include the temporary AvantLink ownership verification script`);
+      }
+      if (text.includes("1655057")) {
+        throw new Error(`${next} must not include old AvantLink application id 1655057`);
+      }
     }
   }
+  walkHtml(distDir);
   const confirmName = "avantlink_confirmation.txt";
   const confirmSrc = fs.readFileSync(path.join(rootDir, "public", confirmName), "utf8");
   const confirmDist = fs.readFileSync(path.join(distDir, confirmName), "utf8");
