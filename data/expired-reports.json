@@ -17,6 +17,14 @@
       "source": "site",
       "status": "open",
       "ip_hash": "2a8a944e5365902f"
+    },
+    {
+      "id": "20260923T124008Z-dji-mini-4-pro-2a8a944b044f",
+      "slug": "dji-mini-4-pro",
+      "reported_at": "2026-09-23T12:40:08.041Z",
+      "source": "site",
+      "status": "open",
+      "ip_hash": "2a8a944e5365902f"
     }
   ]
 }
