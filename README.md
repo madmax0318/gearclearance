@@ -78,6 +78,63 @@ Home and each category page show chips for the tags present on that board. The c
 
 The footer of every page includes the FTC affiliate disclosure.
 
+## Expired deals
+
+Each card and deal page has a quiet **Report expired** control. It does not ask for an account. The click `POST`s `{ "slug", "company" }` to `/api/report-expired`. `company` is a honeypot; a filled value is ignored. The same address can report a slug once per day, and at most eight reports an hour. The browser shows “Thanks — we'll check this deal.” Without JavaScript the rest of the card still works and the control does nothing.
+
+Reports are stored in `data/expired-reports.json` (schema: `pipeline/schema/expired-report-queue.schema.json`):
+
+```json
+{
+  "version": 1,
+  "threshold": 3,
+  "reports": [
+    {
+      "id": "20260923T160000Z-holosun-hs403b-aaaa12ab34",
+      "slug": "holosun-hs403b",
+      "reported_at": "2026-09-23T16:00:00.000Z",
+      "source": "site",
+      "status": "open",
+      "ip_hash": "0123456789abcdef"
+    }
+  ]
+}
+```
+
+`ip_hash` is a salted hash, not a raw address. Reports with an empty hash share one reporter, so they cannot meet the threshold by themselves. `status` is `open`, `dismissed`, or `removed`.
+
+On Cloudflare Pages, `functions/api/report-expired.js` appends a row by committing that file through the GitHub Contents API. Set `GITHUB_TOKEN` (contents read/write on this repo) in the Pages project. Optional: `GITHUB_REPOSITORY` (`madmax0318/gearclearance`), `GITHUB_BRANCH` (`main`), and `REPORT_IP_SALT`. If the token is missing the endpoint returns `queue_unconfigured` and stores nothing. `npm run preview` writes the same file locally so the button can be tried without GitHub.
+
+A deal leaves the public board only after it is marked expired and the site is rebuilt. Two equivalent shapes both drop it from home, aisles, curated, deal pages, and the sitemap:
+
+- `"status": "expired"` on the row in `data/deals.json`
+- the row moved to `data/expired/deals.json` with `"status": "expired"`
+
+Removed rows are not kept on the board as expired cards. Old deal URLs fall through to the 404 page.
+
+From the repo root:
+
+```bash
+node scripts/expire-deal.mjs triage
+node scripts/expire-deal.mjs remove <slug> --by admin --reason "price reverted"
+node scripts/expire-deal.mjs apply-ready --by ion-cannon --confirm ready
+```
+
+`triage` only prints a plan. `remove` moves one live row into `data/expired/deals.json`, sets `expired_at`, `expired_by`, and `expired_reason`, and marks that slug’s open reports `removed`. The merchant `url` is copied unchanged. `apply-ready` does that for every slug whose distinct reporters are at least `threshold` (3). It refuses to run without `--confirm ready`.
+
+### Midday Ion Cannon job
+
+The verifier is a separate local-LLM pass. It should not wrap links or invent affiliate parameters.
+
+1. `git pull` so `data/expired-reports.json` includes reports committed by the Pages function.
+2. `node scripts/expire-deal.mjs triage` (or, inside `pipeline/` after `npm install`, `node src/cli.js expired`).
+3. For each object in `verify`, open `url` exactly as stored. The plan repeats that rule on `affiliate_policy`.
+4. If the offer is gone or the price is no longer a markdown, run that item’s `remove.command`.
+5. Commit `data/deals.json`, `data/expired/deals.json`, and `data/expired-reports.json`.
+6. The next `npm run build` / Pages deploy omits the deal.
+
+`verify` is empty until at least three distinct reporter hashes have an open report for a slug that is still live. A single admin can still remove a deal with `remove` before the threshold.
+
 ## Brand assets
 
 `public/brand/stash-deals-logo.jpg` is the master poster (1152×1728). It is the source art only — it is not shipped to `dist/` and it does not belong in nav chrome, where a portrait poster cannot read.

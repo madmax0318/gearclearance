@@ -1,10 +1,13 @@
 #!/usr/bin/env node
+import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildPaidAdDraft } from "./ads.js";
 import { loadMerchantMap } from "./merchant-map.js";
 import { parseEmailFile } from "./parse-email.js";
 import { openPriceDb, resolveDbPath } from "./price-history-db.js";
 import { decidePublish } from "./publish.js";
+import { normalizeQueue, planVerification, publishedDeals } from "../../src/expired-reports.mjs";
 import { wrap } from "./wrap.js";
 
 const [cmd, ...args] = process.argv.slice(2);
@@ -56,6 +59,11 @@ if (cmd === "parse") {
   const out = { ok: true, path: dbPath, table: table?.name ?? null };
   db.close();
   console.log(JSON.stringify(out, null, 2));
+} else if (cmd === "expired") {
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+  const deals = JSON.parse(fs.readFileSync(path.join(repoRoot, "data", "deals.json"), "utf8"));
+  const queue = normalizeQueue(JSON.parse(fs.readFileSync(path.join(repoRoot, "data", "expired-reports.json"), "utf8")));
+  console.log(JSON.stringify(planVerification(queue, publishedDeals(deals)), null, 2));
 } else if (cmd === "ads") {
   try {
     const draft = buildPaidAdDraft({
@@ -69,6 +77,6 @@ if (cmd === "parse") {
     process.exit(1);
   }
 } else {
-  console.error("Usage: node src/cli.js <parse|wrap|publish|ads|price-history> ...");
+  console.error("Usage: node src/cli.js <parse|wrap|publish|ads|price-history|expired> ...");
   process.exit(1);
 }

@@ -22,3 +22,10 @@
 
 /images/*
   Cache-Control: public, max-age=2592000
+
+/api/*
+  Cache-Control: no-store
+
+/report-slugs.json
+  X-Robots-Tag: noindex
+  Cache-Control: public, max-age=300

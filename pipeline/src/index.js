@@ -15,3 +15,13 @@ export { decidePublish, publishCandidate, STANDING_PUBLISH_NOTE } from "./publis
 export { draftQueue } from "./run.js";
 export { assertCandidateShape, CANDIDATE_FIELDS, candidateRow } from "./schema.js";
 export { wrap } from "./wrap.js";
+export {
+  AFFILIATE_POLICY,
+  acceptReport,
+  applyReady,
+  applyRemoval,
+  emptyQueue,
+  planVerification,
+  publishedDeals,
+  REPORT_THRESHOLD,
+} from "../../src/expired-reports.mjs";

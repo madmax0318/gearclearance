@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizeQueue, publishedDeals, SLUG_RE } from "../src/expired-reports.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
@@ -244,15 +245,16 @@ function byNewest(a, b) {
 function loadDeals() {
   const file = path.join(rootDir, "data", "deals.json");
   const deals = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (!Array.isArray(deals) || deals.length < 12 || deals.length > 48) {
-    throw new Error(`Expected 12–48 deals, found ${deals.length}`);
-  }
+  if (!Array.isArray(deals)) throw new Error("data/deals.json must be an array");
   const slugs = new Set();
   for (const deal of deals) {
     for (const key of ["slug", "title", "merchant", "why", "url", "category", "posted"]) {
       if (deal[key] === undefined || deal[key] === "") throw new Error(`Missing ${key} on a deal`);
     }
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(deal.slug)) throw new Error(`Bad slug: ${deal.slug}`);
+    if (!SLUG_RE.test(deal.slug)) throw new Error(`Bad slug: ${deal.slug}`);
+    if (deal.status !== undefined && deal.status !== "live" && deal.status !== "expired") {
+      throw new Error(`Bad status on ${deal.slug}`);
+    }
     if (slugs.has(deal.slug)) throw new Error(`Duplicate slug: ${deal.slug}`);
     slugs.add(deal.slug);
     if (!categoryById(deal.category)) throw new Error(`Unknown category ${deal.category}`);
@@ -307,17 +309,61 @@ function loadDeals() {
       }
     }
   }
+  const live = publishedDeals(deals);
+  if (live.length < 12 || live.length > 48) {
+    throw new Error(`Expected 12–48 live deals, found ${live.length}`);
+  }
   for (const category of CATEGORIES) {
-    if (!deals.some((deal) => deal.category === category.id)) {
+    if (!live.some((deal) => deal.category === category.id)) {
       throw new Error(`No deals in ${category.id}`);
     }
   }
   for (const tag of DEAL_TAGS) {
-    if (!deals.some((deal) => dealTags(deal).includes(tag.id))) {
+    if (!live.some((deal) => dealTags(deal).includes(tag.id))) {
       throw new Error(`No sample deal tagged ${tag.id}`);
     }
   }
-  return deals.sort(byNewest);
+  return live.sort(byNewest);
+}
+
+function loadArchive(liveSlugs) {
+  const file = path.join(rootDir, "data", "expired", "deals.json");
+  if (!fs.existsSync(file)) return [];
+  const deals = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!Array.isArray(deals)) throw new Error("data/expired/deals.json must be an array");
+  const slugs = new Set();
+  for (const deal of deals) {
+    if (!deal || typeof deal !== "object") throw new Error("Archive deal must be an object");
+    if (!SLUG_RE.test(deal.slug || "")) throw new Error(`Bad archive slug: ${deal.slug}`);
+    if (slugs.has(deal.slug) || liveSlugs.has(deal.slug)) throw new Error(`Duplicate slug: ${deal.slug}`);
+    slugs.add(deal.slug);
+    if (deal.status !== "expired") throw new Error(`Archive deal ${deal.slug} must have status expired`);
+    if (!deal.title || !deal.merchant) throw new Error(`Archive deal ${deal.slug} is missing a title or merchant`);
+    if (deal.category && !categoryById(deal.category)) throw new Error(`Unknown category ${deal.category} on ${deal.slug}`);
+    if (deal.expired_by !== undefined && !["admin", "ion-cannon", "reports"].includes(deal.expired_by)) {
+      throw new Error(`Bad expired_by on ${deal.slug}`);
+    }
+    let parsed;
+    try {
+      parsed = new URL(deal.url);
+    } catch {
+      throw new Error(`Bad url on ${deal.slug}`);
+    }
+    if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
+    for (const [key, value] of parsed.searchParams.entries()) {
+      if (trackingParam(key, value)) throw new Error(`Tracking param ${key} on ${deal.slug}`);
+    }
+    const host = parsed.hostname.toLowerCase();
+    if (host === "example.com" || host.endsWith(".example.com") || host === "gearclearance.mcdaniel.fyi") {
+      throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
+    }
+  }
+  return deals;
+}
+
+function loadReportQueue() {
+  const file = path.join(rootDir, "data", "expired-reports.json");
+  return normalizeQueue(JSON.parse(fs.readFileSync(file, "utf8")));
 }
 
 function dealTags(deal) {
@@ -376,6 +422,10 @@ function renderThumb(deal, depth, { linked = true } = {}) {
   return `<a class="thumb" href="${href(depth, `deals/${deal.slug}/`)}" tabindex="-1" aria-hidden="true">${img}</a>`;
 }
 
+function renderReportControl(deal) {
+  return `<p class="report-row"><button type="button" class="report-expired" data-slug="${esc(deal.slug)}">Report expired<span class="sr-only">: ${esc(deal.title)}</span></button></p>`;
+}
+
 function renderCard(deal, depth, heading) {
   const category = categoryById(deal.category);
   const tag = heading === "h3" ? "h3" : "h2";
@@ -393,6 +443,7 @@ function renderCard(deal, depth, heading) {
   ${renderPriceRow(deal)}
   <p class="why">${esc(deal.why)}</p>
   <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
+  ${renderReportControl(deal)}
   </div>
 </article>`;
 }
@@ -452,6 +503,8 @@ function renderChrome({ depth, activeId, deals, main }) {
       </div>
     </footer>
   </div>
+  <p class="report-hp" aria-hidden="true"><label>Company <input type="text" name="company" tabindex="-1" autocomplete="off" value=""></label></p>
+  <div class="toast" role="status" aria-live="polite" hidden></div>
 </div>`;
 }
 
@@ -656,6 +709,7 @@ function dealPage(deal, allDeals) {
       <a class="cta" href="${esc(deal.url)}" target="_blank" rel="sponsored noopener noreferrer">View deal<span class="sr-only"> at ${esc(deal.merchant)} (opens a new tab)</span>${EXT}</a>
       <p class="fine-note">Confirm the price on the merchant site. The button leaves ${SITE_NAME}.</p>
       ${ffl}
+      ${renderReportControl(deal)}
     </div>
   </article>
   ${relatedHtml}
@@ -755,6 +809,20 @@ function copyFile(from, rel) {
 
 function build() {
   const deals = loadDeals();
+  const rawDeals = JSON.parse(fs.readFileSync(path.join(rootDir, "data", "deals.json"), "utf8"));
+  const archive = loadArchive(new Set(rawDeals.map((deal) => deal.slug)));
+  const queue = loadReportQueue();
+  const probe = publishedDeals([
+    { slug: "expired-sample-not-published", status: "expired" },
+    { slug: "still-live", status: "live" },
+    { slug: "default-live" },
+  ]);
+  if (probe.length !== 2 || probe.some((deal) => deal.status === "expired" || deal.slug === "expired-sample-not-published")) {
+    throw new Error("Expired deals must be filtered out of the public board");
+  }
+  if (queue.version !== 1 || !Array.isArray(queue.reports)) {
+    throw new Error("Expired report queue is missing");
+  }
   fs.rmSync(distDir, { recursive: true, force: true });
   fs.mkdirSync(distDir, { recursive: true });
 
@@ -824,6 +892,10 @@ function build() {
     sitemapEntries.push({ loc: `${SITE}/deals/${deal.slug}/`, lastmod: deal.posted });
   }
 
+  writeFile(
+    "report-slugs.json",
+    `${JSON.stringify(deals.map((deal) => deal.slug).sort())}\n`,
+  );
   writeFile("404.html", notFoundPage(deals));
   writeFile("sitemap.xml", sitemap(sitemapEntries));
   writeFile(
@@ -1019,6 +1091,33 @@ function build() {
     throw new Error("Condition tags must not be sidebar categories");
   }
   const nav = home.slice(home.indexOf('aria-label="Categories"'), home.indexOf('class="rail"'));
+  const reportButtons = home.split('class="report-expired"').length - 1;
+  if (reportButtons !== deals.length) {
+    throw new Error(`Home should have one Report expired control per live deal, found ${reportButtons}`);
+  }
+  if (!home.includes(">Report expired<span") || !home.includes('class="report-hp"') || !home.includes('class="toast"')) {
+    throw new Error("Home page is missing the expired-report control");
+  }
+  if (!sampleDeal.includes('class="report-expired"')) {
+    throw new Error("Deal pages must include Report expired");
+  }
+  const navSource = fs.readFileSync(JS_SRC, "utf8");
+  if (!navSource.includes("Thanks — we'll check this deal.") || !navSource.includes("/api/report-expired")) {
+    throw new Error("Report expired client is missing the thanks toast or the report endpoint");
+  }
+  for (const deal of [...rawDeals.filter((item) => item.status === "expired"), ...archive]) {
+    const needle = `/deals/${deal.slug}/`;
+    if (home.includes(needle) || sitemapXml.includes(needle)) {
+      throw new Error(`Expired deal ${deal.slug} is still on the public board`);
+    }
+    if (fs.existsSync(path.join(distDir, "deals", deal.slug, "index.html"))) {
+      throw new Error(`Expired deal ${deal.slug} still has a public page`);
+    }
+  }
+  const slugFile = JSON.parse(fs.readFileSync(path.join(distDir, "report-slugs.json"), "utf8"));
+  if (slugFile.length !== deals.length || archive.some((deal) => slugFile.includes(deal.slug))) {
+    throw new Error("report-slugs.json must list only live deals");
+  }
   const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Apparel", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
   let cursor = 0;
   for (const label of aisleOrder) {
