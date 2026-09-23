@@ -89,24 +89,66 @@ async function readRepoJson(env, filePath) {
   }
 }
 
-async function slugsFromAssets(env, request) {
-  if (!env.ASSETS?.fetch) return null;
+function slugsFromList(data) {
+  if (!Array.isArray(data)) return null;
+  return new Set(data.filter((slug) => typeof slug === "string" && SLUG_RE.test(slug)));
+}
+
+async function slugsFromResponse(res) {
+  if (!res?.ok) return null;
   try {
-    const assetUrl = new URL("/report-slugs.json", request.url);
-    const res = await env.ASSETS.fetch(new Request(assetUrl));
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data)) return null;
-    return new Set(data.filter((slug) => typeof slug === "string" && SLUG_RE.test(slug)));
+    return slugsFromList(await res.json());
+  } catch {
+    return null;
+  }
+}
+
+async function slugsFromAssets(env, request) {
+  let assetUrl;
+  try {
+    assetUrl = new URL("/report-slugs.json", request.url);
+  } catch {
+    return null;
+  }
+  if (typeof env.ASSETS?.fetch === "function") {
+    try {
+      const slugs = await slugsFromResponse(await env.ASSETS.fetch(new Request(assetUrl, { method: "GET" })));
+      if (slugs) return slugs;
+    } catch {
+      // Binding present but unusable; try the published file below.
+    }
+  }
+  // Some Pages projects do not expose env.ASSETS. The build still publishes /report-slugs.json.
+  try {
+    const res = await fetch(assetUrl, {
+      method: "GET",
+      redirect: "manual",
+      headers: { accept: "application/json" },
+    });
+    return await slugsFromResponse(res);
   } catch {
     return null;
   }
 }
 
 async function knownSlugs(env, request) {
-  const file = await readRepoJson(env, DEALS_PATH);
-  if (file.json && Array.isArray(file.json)) return liveSlugSet(file.json);
-  return slugsFromAssets(env, request);
+  let githubStatus = null;
+  try {
+    const file = await readRepoJson(env, DEALS_PATH);
+    if (file.json && Array.isArray(file.json)) return { slugs: liveSlugSet(file.json) };
+    if (Number.isInteger(file.status)) githubStatus = file.status;
+  } catch {
+    githubStatus = null;
+  }
+  try {
+    const slugs = await slugsFromAssets(env, request);
+    if (slugs) return { slugs };
+  } catch {
+    // Fall through to a closed failure with separate ops codes.
+  }
+  const failure = { slugs: null, github: "github_board_failed", asset: "slug_asset_failed" };
+  if (githubStatus !== null) failure.github_status = githubStatus;
+  return failure;
 }
 
 export async function onRequest(context) {
@@ -136,13 +178,23 @@ export async function onRequest(context) {
   if (!env.GITHUB_TOKEN) return json(503, { ok: false, error: "queue_unconfigured" });
   if (!repoName(env) || !branchName(env)) return json(503, { ok: false, error: "bad_repo" });
 
-  let slugs;
+  let resolved;
   try {
-    slugs = await knownSlugs(env, request);
+    resolved = await knownSlugs(env, request);
   } catch {
-    slugs = null;
+    resolved = { slugs: null, github: "github_board_failed", asset: "slug_asset_failed" };
   }
-  if (!slugs) return json(503, { ok: false, error: "board_unavailable" });
+  if (!resolved?.slugs) {
+    const body = {
+      ok: false,
+      error: "board_unavailable",
+      github: resolved?.github || "github_board_failed",
+      asset: resolved?.asset || "slug_asset_failed",
+    };
+    if (Number.isInteger(resolved?.github_status)) body.github_status = resolved.github_status;
+    return json(503, body);
+  }
+  const slugs = resolved.slugs;
 
   const ip = request.headers.get("cf-connecting-ip") || "";
   let ipHash = "";
