@@ -68,6 +68,25 @@ test("classifies a base layer note as apparel", async () => {
   assert.equal(row.source_url.includes("utm_"), false);
 });
 
+test("classifies a plate carrier note as nylon", async () => {
+  const result = await parseEmail(
+    [
+      "FirstSpear x Black Crest Enforcer Plate Carrier",
+      "Sale price: $130.00 (was $279.00)",
+      "https://www.tacticaldistributors.com/products/black-crest-enforcer-w-cummerbund",
+    ].join("\n"),
+    { env: {} },
+  );
+  const row = result.candidates[0];
+  assertShape(row);
+  assert.equal(row.aisle, "nylon");
+  assert.equal(row.price, 130);
+  assert.equal(row.merchant_domain, "tacticaldistributors.com");
+  assert.equal(row.needs_affiliate, true);
+  assert.equal(row.source_url.includes("tag="), false);
+  assert.equal(row.source_url.includes("utm_"), false);
+});
+
 test("strips a foreign affiliate tag from an ammo sale email", async () => {
   const result = await parseEmailFile(fixture("midway-9mm-sale.eml"), { env: {} });
   const row = result.candidates[0];

@@ -57,6 +57,15 @@ const CATEGORIES = [
       "Jackets, boots, gloves, baselayers, and hats. Each card shows the merchant, the previous price, and why the markdown is listed.",
   },
   {
+    id: "nylon",
+    slug: "nylon",
+    name: "Nylon",
+    h1: "Nylon deals",
+    eyebrow: "Nylon",
+    description:
+      "Packs, pouches, gun bags, chest rigs, and plate carriers. Each card shows the merchant, the previous price, and why the markdown is listed.",
+  },
+  {
     id: "food-storage",
     slug: "food-storage",
     name: "Food storage",
@@ -109,8 +118,8 @@ const HOME = {
   eyebrow: "Latest across every aisle",
   title: "Latest deals | The Stash Deals",
   description:
-    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, apparel, food storage, survival, household goods, gaming, and drones.",
-  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, apparel, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
+    "Grow your stash without shrinking your wallet. Deals on guns, ammo, optics, accessories, apparel, nylon, food storage, survival, household goods, gaming, and drones.",
+  lede: "Grow your stash without shrinking your wallet. Newest deals across guns, ammo, optics, accessories, apparel, nylon, food storage, survival, household goods, gaming, and drones. Open a category to narrow the board.",
 };
 
 const CURATED = {
@@ -310,8 +319,8 @@ function loadDeals() {
     }
   }
   const live = publishedDeals(deals);
-  if (live.length < 12 || live.length > 90) {
-    throw new Error(`Expected 12–90 live deals, found ${live.length}`);
+  if (live.length < 12 || live.length > 100) {
+    throw new Error(`Expected 12–100 live deals, found ${live.length}`);
   }
   for (const category of CATEGORIES) {
     if (!live.some((deal) => deal.category === category.id)) {
@@ -1118,7 +1127,7 @@ function build() {
   if (slugFile.length !== deals.length || archive.some((deal) => slugFile.includes(deal.slug))) {
     throw new Error("report-slugs.json must list only live deals");
   }
-  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Apparel", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
+  const aisleOrder = ["Guns", "Ammo", "Optics", "Accessories", "Apparel", "Nylon", "Food storage", "Survival", "Household goods", "Gaming", "Drones"];
   let cursor = 0;
   for (const label of aisleOrder) {
     const at = nav.indexOf(`>${label}<`, cursor);
