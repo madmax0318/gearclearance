@@ -1,5 +1,14 @@
 {
   "version": 1,
   "threshold": 3,
-  "reports": []
+  "reports": [
+    {
+      "id": "20260923T061255Z-mercury-mini-monster-deployment-bag-23c37acfdfac",
+      "slug": "mercury-mini-monster-deployment-bag",
+      "reported_at": "2026-09-23T06:12:55.146Z",
+      "source": "site",
+      "status": "open",
+      "ip_hash": "23c37a53403153cc"
+    }
+  ]
 }
