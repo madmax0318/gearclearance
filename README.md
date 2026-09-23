@@ -64,7 +64,7 @@ Each deal also has a page under `/deals/<slug>/` with Product and Offer JSON-LD.
 
 ## Deal data
 
-`data/deals.json` holds 94 deals covering all eleven aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters (`tag`, `linkId`, `utm_*`, or `ref_=as_li_*`). They render with `rel="sponsored noopener noreferrer"`. A deal with no listed price keeps `price_now` and `price_was` null and renders as a sale page. Edit the JSON and rebuild to change the board.
+`data/deals.json` holds 95 deals covering all eleven aisles. Each `url` is a clean HTTPS page on the named merchant: the product page when one is published, otherwise that merchant's category or search page for the product. These links do not include affiliate tracking parameters (`tag`, `linkId`, `utm_*`, or `ref_=as_li_*`). They render with `rel="sponsored noopener noreferrer"`. A deal with no listed price keeps `price_now` and `price_was` null and renders as a sale page. Edit the JSON and rebuild to change the board.
 
 A deal may include an optional `image` path such as `images/deals/<slug>.jpg`. The file lives in `public/images/deals/` and is copied into `dist/` at build time. Cards and deal pages render that thumbnail. A deal with no `image` renders a “No photo” frame instead of an `<img>`, so a missing file never becomes a broken image. Image values must be those local files — not remote URLs — which keeps the content security policy on `img-src 'self'`.
 
