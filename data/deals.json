@@ -1199,5 +1199,31 @@
     "image": "images/deals/spiritus-lv-119-rear-covert-plate-bag.jpg",
     "curated": true,
     "posted": "2026-09-23"
+  },
+  {
+    "slug": "seager-wilson-snapback",
+    "title": "Seager Wilson Snapback",
+    "merchant": "Tactical Distributors",
+    "price_now": 20,
+    "price_was": 35,
+    "category": "apparel",
+    "why": "Seager Wilson snapback in Brown at $20, down from $35. Brown is the only color on this page and it is in stock.",
+    "url": "https://www.tacticaldistributors.com/products/seager-wilson-snapback-2",
+    "image": "images/deals/seager-wilson-snapback.jpg",
+    "curated": true,
+    "posted": "2026-09-23"
+  },
+  {
+    "slug": "td-workup-training-shorts",
+    "title": "TD Workup Training Shorts",
+    "merchant": "Tactical Distributors",
+    "price_now": 24.99,
+    "price_was": 39.99,
+    "category": "apparel",
+    "why": "Training shorts at $24.99, down from $39.99. Still in stock in Nile Brown Small and XX-Large, and OD Green Small.",
+    "url": "https://www.tacticaldistributors.com/products/td-training-shorts",
+    "image": "images/deals/td-workup-training-shorts.jpg",
+    "curated": true,
+    "posted": "2026-09-23"
   }
 ]
