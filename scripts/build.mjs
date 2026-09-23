@@ -726,28 +726,39 @@ function dealPage(deal, allDeals) {
   const graph = [
     organizationNode(),
     websiteNode(),
-    {
-      "@type": "Product",
-      "@id": `${canonical}#product`,
-      name: deal.title,
-      description: deal.why,
-      category: category.name,
-      ...(hasImage(deal) ? { image: `${SITE}/${deal.image}` } : {}),
-      mainEntityOfPage: canonical,
-      offers: {
-        "@type": "Offer",
-        url: deal.url,
-        ...(listed
-          ? { priceCurrency: "USD", price: deal.price_now.toFixed(2) }
-          : {}),
-        priceValidUntil: plusDays(deal.posted, 30),
-        availability: "https://schema.org/InStock",
-        itemCondition: dealTags(deal).some((id) => id === "used" || id === "police-trade-in")
-          ? "https://schema.org/UsedCondition"
-          : "https://schema.org/NewCondition",
-        seller: { "@type": "Organization", name: deal.merchant },
-      },
-    },
+    // Google requires a price whenever `offers` is used, and supports product rich results only on
+    // pages about a single product. A deal with no listed price points at a merchant sale or
+    // collection page, so it fails both tests and is described as a plain page instead.
+    listed
+      ? {
+          "@type": "Product",
+          "@id": `${canonical}#product`,
+          name: deal.title,
+          description: deal.why,
+          category: category.name,
+          ...(hasImage(deal) ? { image: `${SITE}/${deal.image}` } : {}),
+          mainEntityOfPage: canonical,
+          offers: {
+            "@type": "Offer",
+            url: deal.url,
+            priceCurrency: "USD",
+            price: deal.price_now.toFixed(2),
+            priceValidUntil: plusDays(deal.posted, 30),
+            availability: "https://schema.org/InStock",
+            itemCondition: dealTags(deal).some((id) => id === "used" || id === "police-trade-in")
+              ? "https://schema.org/UsedCondition"
+              : "https://schema.org/NewCondition",
+            seller: { "@type": "Organization", name: deal.merchant },
+          },
+        }
+      : {
+          "@type": "WebPage",
+          "@id": `${canonical}#page`,
+          url: canonical,
+          name: deal.title,
+          description: deal.why,
+          isPartOf: { "@id": `${SITE}/#website` },
+        },
     breadcrumbNode([
       { name: "Home", url: `${SITE}/` },
       { name: category.name, url: `${SITE}/${category.slug}/` },
@@ -968,6 +979,24 @@ function build() {
     }
   }
   walkDist(distDir);
+  // Google requires `price` and `priceCurrency` on any Offer it is given, and only marks up a
+  // single product per page. Sale-page deals carry no price, so they must not emit either.
+  for (const deal of deals) {
+    const file = path.join(distDir, "deals", deal.slug, "index.html");
+    const graph = JSON.parse(
+      fs.readFileSync(file, "utf8").match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
+    )["@graph"];
+    const product = graph.find((node) => node["@type"] === "Product");
+    if (hasListedPrice(deal)) {
+      if (!product) throw new Error(`${deal.slug} must describe a priced deal as a Product`);
+      const offer = product.offers ?? {};
+      if (!offer.price || !offer.priceCurrency) {
+        throw new Error(`${deal.slug} has an Offer without price or priceCurrency`);
+      }
+    } else if (product) {
+      throw new Error(`${deal.slug} has no listed price and must not emit Product markup`);
+    }
+  }
   const robots = fs.readFileSync(path.join(distDir, "robots.txt"), "utf8");
   const sitemapXml = fs.readFileSync(path.join(distDir, "sitemap.xml"), "utf8");
   if (!robots.includes("Sitemap: https://thestash.deals/sitemap.xml")) {
