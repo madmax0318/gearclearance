@@ -86,6 +86,18 @@ node src/cli.js ads --aisle household --title 'Portable power station'
 
 `wrap` reads `pipeline/data/merchant-map.example.json` unless you pass `--map`. `publish` prints the gate decision for the current environment and does not deploy. `ads` exits non-zero for guns, ammo, and weapons-related items. `price-history init` creates the local hist-price database.
 
+## Expired deals (midday check)
+
+Reader reports live in `data/expired-reports.json` at the repo root. The shape is `schema/expired-report-queue.schema.json`. This package does not turn a report into a publish, and it does not invent an affiliate tag while checking a URL.
+
+A midday job on this machine:
+
+```bash
+node src/cli.js expired
+```
+
+That prints the same plan as `node scripts/expire-deal.mjs triage` from the repo root: slugs with at least `threshold` distinct open reporters, the stored merchant `url`, and `remove.command`. Fetch that URL as stored. If the offer is gone or the markdown is gone, run the command, then commit `data/deals.json`, `data/expired/deals.json`, and `data/expired-reports.json`. The next site build drops the deal. See the root README section “Expired deals”.
+
 ## Environment
 
 Copy `pipeline/.env.example` to `pipeline/.env` on the machine. `.env` is gitignored. Publisher IDs stay in Proton Pass and are exported into the shell only when wrapping:

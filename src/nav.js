@@ -70,3 +70,41 @@ if (tagFilters && filterGrid) {
   const known = chips.some((chip) => chip.dataset.tag === requested);
   applyTag(known ? requested : "");
 }
+
+const toast = document.querySelector(".toast");
+let toastTimer = 0;
+
+function showToast(message) {
+  if (!toast) return;
+  toast.textContent = message;
+  toast.hidden = false;
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toast.hidden = true;
+  }, 4500);
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".report-expired");
+  if (!button || button.disabled) return;
+  const slug = button.dataset.slug || "";
+  const company = document.querySelector(".report-hp input");
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  fetch("/api/report-expired", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ slug, company: company ? company.value : "" }),
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("report failed");
+      button.textContent = "Reported";
+      button.removeAttribute("aria-busy");
+      showToast("Thanks — we'll check this deal.");
+    })
+    .catch(() => {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
+      showToast("Couldn't save that report. Try again in a minute.");
+    });
+});
