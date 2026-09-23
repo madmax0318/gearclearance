@@ -209,8 +209,20 @@ function percentOff(now, was) {
   return Math.round((1 - now / was) * 100);
 }
 
+function isMoney(value) {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function hasNowPrice(deal) {
+  return isMoney(deal.price_now);
+}
+
+function hasWasPrice(deal) {
+  return isMoney(deal.price_was);
+}
+
 function hasListedPrice(deal) {
-  return typeof deal.price_now === "number" && typeof deal.price_was === "number";
+  return hasNowPrice(deal);
 }
 
 function trackingParam(key, value) {
@@ -267,11 +279,19 @@ function loadDeals() {
     if (slugs.has(deal.slug)) throw new Error(`Duplicate slug: ${deal.slug}`);
     slugs.add(deal.slug);
     if (!categoryById(deal.category)) throw new Error(`Unknown category ${deal.category}`);
-    const priceMissing = deal.price_now == null && deal.price_was == null;
-    if (!priceMissing && !hasListedPrice(deal)) {
-      throw new Error(`Prices must be numbers or both null on ${deal.slug}`);
+    if (deal.price_now != null && !hasNowPrice(deal)) {
+      throw new Error(`price_now must be a number or null on ${deal.slug}`);
     }
-    if (hasListedPrice(deal) && !(deal.price_was > deal.price_now && deal.price_now > 0)) {
+    if (deal.price_was != null && !hasWasPrice(deal)) {
+      throw new Error(`price_was must be a number or null on ${deal.slug}`);
+    }
+    if (deal.price_now == null && deal.price_was != null) {
+      throw new Error(`price_was requires price_now on ${deal.slug}`);
+    }
+    if (hasNowPrice(deal) && !(deal.price_now > 0)) {
+      throw new Error(`Price must be positive on ${deal.slug}`);
+    }
+    if (hasWasPrice(deal) && !(deal.price_was > deal.price_now)) {
       throw new Error(`Price must drop on ${deal.slug}`);
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deal.posted) || Number.isNaN(Date.parse(`${deal.posted}T00:00:00Z`))) {
@@ -319,8 +339,8 @@ function loadDeals() {
     }
   }
   const live = publishedDeals(deals);
-  if (live.length < 12 || live.length > 110) {
-    throw new Error(`Expected 12–110 live deals, found ${live.length}`);
+  if (live.length < 12 || live.length > 120) {
+    throw new Error(`Expected 12–120 live deals, found ${live.length}`);
   }
   for (const category of CATEGORIES) {
     if (!live.some((deal) => deal.category === category.id)) {
@@ -407,6 +427,11 @@ function renderPriceRow(deal) {
   if (!hasListedPrice(deal)) {
     return `<div class="price-row">
     <p class="now is-unpriced"><span class="sr-only">Price </span>Sale page</p>
+  </div>`;
+  }
+  if (!hasWasPrice(deal)) {
+    return `<div class="price-row">
+    <p class="now"><span class="sr-only">Price now </span>${esc(money(deal.price_now))}</p>
   </div>`;
   }
   const pct = percentOff(deal.price_now, deal.price_was);
@@ -673,11 +698,14 @@ function dealPage(deal, allDeals) {
   const depth = 2;
   const canonical = `${SITE}/deals/${deal.slug}/`;
   const listed = hasListedPrice(deal);
-  const pct = listed ? percentOff(deal.price_now, deal.price_was) : null;
+  const compared = listed && hasWasPrice(deal);
+  const pct = compared ? percentOff(deal.price_now, deal.price_was) : null;
   const description = clip(
-    listed
+    compared
       ? `${deal.title} is ${money(deal.price_now)} at ${deal.merchant} (was ${money(deal.price_was)}, ${pct}% off). ${deal.why}`
-      : `${deal.title} is a sale page at ${deal.merchant}. ${deal.why}`,
+      : listed
+        ? `${deal.title} is ${money(deal.price_now)} at ${deal.merchant}. ${deal.why}`
+        : `${deal.title} is a sale page at ${deal.merchant}. ${deal.why}`,
   );
   const title = listed
     ? `${deal.title} — ${money(deal.price_now)} | ${SITE_NAME}`
