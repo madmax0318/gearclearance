@@ -115,7 +115,7 @@ Empty or missing ids fail closed. The example map uses `https://network.example.
 
 `source_url`, `title`, `price`, `merchant_domain`, `aisle`, `raw_subject`, `raw_from`, `received_at`, `confidence`, `needs_affiliate`, `notes`.
 
-Aisles match the site: guns, ammo, optics, accessories, apparel, food-storage, survival, household, gaming, drones. Unknown values stay null instead of being guessed into a paid-ads category.
+Aisles match the site: guns, ammo, optics, accessories, apparel, nylon, food-storage, survival, household, gaming, drones. Unknown values stay null instead of being guessed into a paid-ads category.
 
 ## Fixtures
 
