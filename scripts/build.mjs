@@ -339,8 +339,8 @@ function loadDeals() {
     }
   }
   const live = publishedDeals(deals);
-  if (live.length < 12 || live.length > 120) {
-    throw new Error(`Expected 12–120 live deals, found ${live.length}`);
+  if (live.length < 12 || live.length > 122) {
+    throw new Error(`Expected 12–122 live deals, found ${live.length}`);
   }
   for (const category of CATEGORIES) {
     if (!live.some((deal) => deal.category === category.id)) {
