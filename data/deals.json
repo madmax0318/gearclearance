@@ -191,19 +191,6 @@
     "posted": "2026-09-12"
   },
   {
-    "slug": "sig-romeo5",
-    "title": "Sig Sauer Romeo5 1x20mm",
-    "merchant": "Palmetto State Armory",
-    "price_now": 129.99,
-    "price_was": 189.99,
-    "category": "optics",
-    "why": "New Romeo5 street price has settled around $160. This used unit is under that, and it is not a parts gun.",
-    "url": "https://palmettostatearmory.com/sig-sauer-romeo5-1x20mm-red-dot-sight-black-r52001.html",
-    "tags": ["used"],
-    "curated": false,
-    "posted": "2026-09-11"
-  },
-  {
     "slug": "adventure-medical-sportsman-200",
     "title": "Adventure Medical Kits Sportsman 200",
     "merchant": "REI",
