@@ -72,6 +72,52 @@ test("Uncle Mike's matches apostrophe, plural, and slug forms only", () => {
   }
 });
 
+test("a BlackHawk nylon pouch and a BlackHawk knife are not rejected", () => {
+  const list = loadBannedBrands();
+  const scope = list.entries.find((entry) => entry.brand === "BlackHawk SERPA").scope;
+  assert.match(scope, /Only SERPA|Ban only BlackHawk SERPA/i);
+  assert.match(scope, /nylon \(packs, pouches, slings\)/);
+  assert.match(scope, /knives are wanted and must pass/);
+
+  const lines = [];
+  const result = screenCandidates(
+    [
+      {
+        title: "BlackHawk nylon pouch",
+        slug: "blackhawk-nylon-admin-pouch",
+        why: "BlackHawk nylon admin pouch",
+        source_url: "https://shop.example/blackhawk-nylon-pouch",
+        notes: "Pack-compatible nylon pouch",
+        raw_subject: "Clearance: BlackHawk nylon pouch",
+      },
+      {
+        title: "BlackHawk knife",
+        slug: "blackhawk-fixed-blade-knife",
+        why: "BlackHawk fixed-blade knife",
+        source_url: "https://shop.example/blackhawk-knife",
+        notes: "BlackHawk knife on sale",
+        raw_subject: "Clearance: BlackHawk knife",
+      },
+      {
+        title: "BlackHawk SERPA holster",
+        source_url: "https://shop.example/blackhawk-serpa-holster",
+        notes: "",
+        raw_subject: "BlackHawk SERPA holster",
+      },
+    ],
+    { log: (line) => lines.push(line), blocklist: list },
+  );
+  assert.deepEqual(
+    result.candidates.map((candidate) => candidate.title),
+    ["BlackHawk nylon pouch", "BlackHawk knife"],
+  );
+  assert.equal(result.rejected.length, 1);
+  assert.equal(result.rejected[0].brand, "BlackHawk SERPA");
+  assert.equal(result.rejected.some((item) => /pouch|knife/i.test(item.title)), false);
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /BlackHawk SERPA holster/);
+});
+
 test("SERPA requires that word and leaves other BlackHawk products alone", () => {
   assert.equal(matchBannedBrand({ title: "BlackHawk SERPA Quick Disconnect Female Adapter" })?.brand, "BlackHawk SERPA");
   assert.equal(matchBannedBrand({ slug: "aim-blackhawk-serpa-qd-female" })?.brand, "BlackHawk SERPA");

@@ -14,7 +14,7 @@
     {
       "brand": "BlackHawk SERPA",
       "patterns": ["\\bserpa\\b"],
-      "scope": "Ban BlackHawk SERPA holsters, SERPA QD, and other SERPA attachments. A match requires the word SERPA. BlackHawk products that do not include SERPA stay allowed."
+      "scope": "Ban only BlackHawk SERPA items (holsters, SERPA QD, and other SERPA attachments). A match requires the word SERPA. BlackHawk nylon (packs, pouches, slings) and BlackHawk knives are wanted and must pass."
     }
   ]
 }

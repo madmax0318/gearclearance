@@ -25,7 +25,7 @@ Dave banned three brands from [thestash.deals](https://thestash.deals). The sour
 
 - **CAA (Command Arms Accessories)** — the standalone word `CAA`, or `Command Arms` (including a slug like `command-arms`). `CAA` inside another word does not match.
 - **Uncle Mike's** — `Uncle Mike's`, `Uncle Mikes`, and slug form `uncle-mikes`.
-- **BlackHawk SERPA** — holsters, QD, and other components whose name includes the word `SERPA`. A BlackHawk product that does not say SERPA stays allowed.
+- **BlackHawk SERPA** — only SERPA items (holsters, QD, and other attachments whose name includes the word `SERPA`). BlackHawk nylon (packs, pouches, slings) and BlackHawk knives are wanted and must pass.
 
 Collect/Clean rejects a matching candidate before Wrap. The candidate is omitted from the card queue and the reason is logged as `banned-brand` plus the brand name and scope note. `AUTO_PUBLISH` is unchanged: the flag still defaults off, and this filter does not publish or unpublish anything by itself. `npm run build` fails closed if a live row in `data/deals.json` matches the same list.
 
@@ -140,7 +140,7 @@ Invented sale mail, no personal data:
 ## What this package will not do
 
 - Invent affiliate tags, MIDs, or publisher ids
-- Draft or publish CAA (Command Arms Accessories), Uncle Mike's, or BlackHawk SERPA components
+- Draft or publish CAA (Command Arms Accessories), Uncle Mike's, or BlackHawk SERPA items. BlackHawk nylon (packs, pouches, slings) and BlackHawk knives stay allowed.
 - Publish because a model or a missing map said so
 - Buy Meta or X ads for guns, ammo, or weapons-related gear
 - Remove the site’s Impact universal tag or AvantLink confirmation file

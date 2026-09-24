@@ -11,6 +11,6 @@ Source of truth: `data/banned-brands.json` (brand name, case-insensitive word-bo
 
 - **CAA (Command Arms Accessories)** — match the word `CAA` or `Command Arms`. Do not match `CAA` as a substring inside another word.
 - **Uncle Mike's** — match `Uncle Mike's`, `Uncle Mikes`, and slug form `uncle-mikes`.
-- **BlackHawk SERPA** — match the word `SERPA` (holsters, QD, attachments). BlackHawk products that do not say SERPA stay allowed.
+- **BlackHawk SERPA** — only SERPA items. Match the word `SERPA` (holsters, QD, attachments). BlackHawk nylon (packs, pouches, slings) and BlackHawk knives are wanted and must pass.
 
 `npm run build` fails if a live deal matches. Pipeline Collect/Clean drops matching candidates and logs `banned-brand` before they become cards. Leave `AUTO_PUBLISH` unchanged. Keep merchant URLs bare: do not add affiliate parameters when skipping or removing one of these deals.
