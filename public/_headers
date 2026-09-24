@@ -3,7 +3,7 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-uJt3lcT3CAhgH597X2SbUj3+UmhPZdiWUwzo7l/hVxM=' http://classic.avantlink.com https://classic.avantlink.com https://utt.impactcdn.com; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' http://classic.avantlink.com https://classic.avantlink.com https://utt.impactcdn.com https://*.impactradius.com https://*.impact.com; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' http://classic.avantlink.com https://classic.avantlink.com; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' http://classic.avantlink.com https://classic.avantlink.com; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Cross-Origin-Opener-Policy: same-origin
   X-DNS-Prefetch-Control: off
