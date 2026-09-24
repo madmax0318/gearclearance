@@ -180,6 +180,54 @@ const EXT = `<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path fill=
 const THUMB_MARK = `<svg class="thumb-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M2.5 8.5h27v4.2h-27z" fill="currentColor"/><rect x="4.2" y="12.7" width="23.6" height="12.8" rx="1.6" fill="#3d4a32" stroke="currentColor" stroke-width="1.8"/><rect x="11.6" y="16.4" width="8.8" height="5.4" rx="1" fill="#d4a017"/></svg>`;
 const IMAGE_RE = /^images\/deals\/[a-z0-9]+(?:-[a-z0-9]+)*\.(jpg|jpeg|png|webp)$/;
 
+// WCAG 2.x relative luminance and contrast, so the guardrail block can check the palette
+// numerically instead of trusting a reviewer's eye. axe and Lighthouse cannot do this here:
+// body and .card both paint gradients, so axe marks 225 of 226 text nodes "incomplete —
+// background color could not be determined" and the accessibility score stays at 100.
+function srgbToLinear(channel) {
+  const c = channel / 255;
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex) {
+  const value = hex.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => srgbToLinear(parseInt(value.slice(i, i + 2), 16)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a, b) {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+// Every foreground/background token pair the stylesheet actually produces, with the ratio measured
+// on 2026-09-22 as a floor. `need` is 4.5 for body text and 3 for large text (>=24px, or >=18.66px
+// bold). Three pairs are known to fail AA; they are recorded rather than hidden so the build fails
+// on a new failure or a regression, and passes again once a token is lightened.
+const CONTRAST_PAIRS = [
+  { label: ".lede/.result-count/.empty/.legal/.crumbs a/.tag-chip", fg: "muted", bg: "bg", need: 4.5, measured: 6.11 },
+  { label: ".crumbs current + .tag-chip .count", fg: "faint", bg: "bg", need: 4.5, measured: 4.36 },
+  { label: ".nav-link .count + .fine-note", fg: "muted", bg: "panel", need: 4.5, measured: 3.78 },
+  { label: ".cat-link/.merchant time/.was on a card", fg: "muted", bg: "panel-2", need: 4.5, measured: 3.1 },
+  { label: ".nav-link/.rail-note/.brand-tag", fg: "text", bg: "panel", need: 4.5, measured: 8.78 },
+  { label: ".why/.merchant on a card", fg: "text", bg: "panel-2", need: 4.5, measured: 7.2 },
+  { label: ".eyebrow", fg: "accent", bg: "bg", need: 4.5, measured: 7.84 },
+  { label: ".rail-kicker", fg: "accent", bg: "panel", need: 4.5, measured: 4.85 },
+  { label: ".now (large)", fg: "accent-hover", bg: "panel-2", need: 3, measured: 4.41 },
+  { label: ".off badge + .pill", fg: "accent-hover", bg: "surface", need: 4.5, measured: 7.82 },
+  { label: ".cta + .skip", fg: "accent-ink", bg: "accent", need: 4.5, measured: 7.7 },
+  { label: ".disclosure", fg: "text", bg: "notice-bg", need: 4.5, measured: 13.51 },
+  { label: ".disclosure strong", fg: "accent", bg: "notice-bg", need: 4.5, measured: 7.46 },
+];
+
+// Lightening --muted and --faint clears all three; until then the count must not grow.
+const KNOWN_CONTRAST_FAILURES = 3;
+
+// Measured 73,492 B across three faces. The budget leaves a little headroom but not a fourth face:
+// the fonts are the largest render-affecting payload on the site and are discovered only after the
+// stylesheet parses, so every added byte lands inside the FOUT window.
+const FONT_BUDGET_BYTES = 76800;
+
 function esc(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
     switch (char) {
@@ -1225,6 +1273,132 @@ function build() {
     if (at < 0) throw new Error(`Sidebar missing ${label} in aisle order`);
     cursor = at;
   }
+
+  // ---- UX/UI guardrails (see .cursor/rules/ux-ui.mdc for the audit each one came from) ----
+
+  const cssText = fs.readFileSync(CSS_SRC, "utf8");
+  const tokens = Object.fromEntries(
+    [...cssText.slice(cssText.indexOf(":root"), cssText.indexOf("color-scheme")).matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})\b/gi)].map(
+      (match) => [match[1], match[2].toLowerCase()],
+    ),
+  );
+  let contrastFailures = 0;
+  for (const pair of CONTRAST_PAIRS) {
+    for (const token of [pair.fg, pair.bg]) {
+      if (!tokens[token]) throw new Error(`Colour token --${token} is gone; update CONTRAST_PAIRS for ${pair.label}`);
+    }
+    const ratio = contrastRatio(tokens[pair.fg], tokens[pair.bg]);
+    if (ratio < pair.measured - 0.01) {
+      throw new Error(
+        `Contrast regression: ${pair.label} (--${pair.fg} on --${pair.bg}) dropped to ${ratio.toFixed(2)}:1 from ${pair.measured}:1`,
+      );
+    }
+    if (ratio < pair.need) contrastFailures += 1;
+  }
+  if (contrastFailures > KNOWN_CONTRAST_FAILURES) {
+    throw new Error(`${contrastFailures} token pairs now fail WCAG AA contrast, up from ${KNOWN_CONTRAST_FAILURES}`);
+  }
+
+  // Motion the stylesheet declares must be switched off for prefers-reduced-motion, not just some
+  // of it. Only .sidebar animates and only html scrolls smoothly, so both must appear in the block.
+  const reduceAt = cssText.indexOf("@media (prefers-reduced-motion: reduce)");
+  if (reduceAt < 0) throw new Error("site.css must keep a prefers-reduced-motion block");
+  const reduceBlock = cssText.slice(reduceAt);
+  for (const rule of cssText.slice(0, reduceAt).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const [, rawSelector, body] = rule;
+    const animates = /transition:\s*(?!none)|animation:\s*(?!none)|scroll-behavior:\s*smooth/.test(body);
+    if (!animates) continue;
+    const selector = rawSelector.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    if (!reduceBlock.includes(selector)) {
+      throw new Error(`${selector} animates but is not reset under prefers-reduced-motion`);
+    }
+  }
+
+  // Self-hosted faces must swap rather than block text, must exist in dist/, and must stay inside
+  // the payload budget. font-display is the difference between a FOUT and invisible text.
+  const faces = [...cssText.matchAll(/@font-face\s*\{([^}]*)\}/g)].map((match) => match[1]);
+  if (!faces.length) throw new Error("site.css declares no @font-face rules");
+  let fontBytes = 0;
+  for (const face of faces) {
+    if (!/font-display:\s*swap/.test(face)) {
+      throw new Error("Every @font-face must set font-display: swap");
+    }
+    const file = face.match(/url\("\.\.\/fonts\/([^"]+)"\)/);
+    if (!file) throw new Error("Every @font-face must load a self-hosted ../fonts/ woff2");
+    const shipped = path.join(distDir, "fonts", file[1]);
+    if (!fs.existsSync(shipped)) throw new Error(`@font-face references ${file[1]} which is not in dist/fonts/`);
+    fontBytes += fs.statSync(shipped).size;
+  }
+  if (fontBytes > FONT_BUDGET_BYTES) {
+    throw new Error(`Webfonts total ${fontBytes} B, over the ${FONT_BUDGET_BYTES} B budget`);
+  }
+
+  const pages = [];
+  function collectPages(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) collectPages(full);
+      else if (entry.name.endsWith(".html")) pages.push([path.relative(distDir, full), fs.readFileSync(full, "utf8")]);
+    }
+  }
+  collectPages(distDir);
+  if (pages.length !== htmlCount) throw new Error(`Expected ${htmlCount} HTML pages, collected ${pages.length}`);
+
+  for (const [name, html] of pages) {
+    // 43 cards carry the identical visible label "View deal", so link purpose rests entirely on the
+    // sr-only merchant suffix, and the new-tab warning has to reach a screen reader before the click.
+    for (const cta of html.matchAll(/<a class="cta"([^>]*)>([\s\S]*?)<\/a>/g)) {
+      const [, attrs, inner] = cta;
+      if (!attrs.includes('target="_blank"') || !attrs.includes('rel="sponsored noopener noreferrer"')) {
+        throw new Error(`${name} has a View deal link without target="_blank" and rel="sponsored noopener noreferrer"`);
+      }
+      if (!/<span class="sr-only"> at [^<]*\(opens a new tab\)<\/span>/.test(inner)) {
+        throw new Error(`${name} has a View deal link without the sr-only merchant and new-tab suffix`);
+      }
+      if (!inner.includes('class="ext"')) {
+        throw new Error(`${name} has a View deal link without the visible external-link affordance`);
+      }
+    }
+
+    // One h1 and no skipped levels, so the heading outline is a usable table of contents.
+    const levels = [...html.matchAll(/<h([1-6])[\s>]/g)].map((match) => Number(match[1]));
+    if (levels.filter((level) => level === 1).length !== 1) {
+      throw new Error(`${name} must have exactly one h1, found ${levels.filter((level) => level === 1).length}`);
+    }
+    for (let i = 1; i < levels.length; i += 1) {
+      if (levels[i] > levels[i - 1] + 1) {
+        throw new Error(`${name} skips from h${levels[i - 1]} to h${levels[i]}`);
+      }
+    }
+
+    // Intrinsic dimensions keep an image from shifting the layout once it decodes.
+    for (const img of html.matchAll(/<img\b[^>]*>/g)) {
+      for (const attr of ["width=", "height=", "alt="]) {
+        if (!img[0].includes(attr)) throw new Error(`${name} has an <img> missing ${attr}`);
+      }
+    }
+
+    // The skip link is the only way past 13 nav links by keyboard, so its target must exist.
+    const skip = html.match(/<a class="skip" href="#([^"]+)">/);
+    if (!skip) throw new Error(`${name} is missing the skip link`);
+    if (!html.includes(`id="${skip[1]}"`)) throw new Error(`${name} skip link points at missing #${skip[1]}`);
+
+    // nav.js rewrites .result-count and toggles aria-pressed, so the markup it needs must be there.
+    if (html.includes('class="tag-filters"')) {
+      if (!html.includes('role="group"') || !html.includes('aria-label="Filter by condition or source"')) {
+        throw new Error(`${name} renders tag filters without a labelled group`);
+      }
+      if (!/<p class="result-count" data-total="\d+">/.test(html)) {
+        throw new Error(`${name} renders tag filters without the .result-count element nav.js updates`);
+      }
+      for (const chip of html.matchAll(/<button[^>]*class="tag-chip[^>]*>/g)) {
+        if (!chip[0].includes('type="button"') || !chip[0].includes("aria-pressed=")) {
+          throw new Error(`${name} has a tag chip without type="button" and aria-pressed`);
+        }
+      }
+    }
+  }
+
   console.log(`Built ${htmlCount} HTML pages and ${deals.length} deals into dist/`);
 }
 

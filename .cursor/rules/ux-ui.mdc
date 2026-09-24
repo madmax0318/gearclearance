@@ -1,0 +1,182 @@
+---
+description: UX/UI rules for The Stash Deals, derived from a measured audit of the live site
+globs: ["src/**", "scripts/build.mjs", "public/_headers"]
+alwaysApply: false
+---
+
+# UX/UI rules
+
+Audited 2026-09-22 at commit `890bb36` (56 pages, 43 deals), against the local build and
+https://thestash.deals, in headless Chrome at 1440px and 390px. Performance numbers are from a
+390px run under 4x CPU throttling and ~1.6 Mbps / 150 ms RTT unless marked *production*. Contrast
+ratios are computed from the `:root` tokens in `src/site.css`. Every rule cites the measurement that
+motivated it; re-measure before assuming the numbers still hold.
+
+Rules marked **[build]** are enforced by the guardrail block at the end of `build()`.
+SEO, structured data, titles and indexability live in `.cursor/rules/seo.mdc` — not here.
+
+## The one thing to internalise
+
+**The automated accessibility score on this site is blind, and it is blind specifically about
+colour.** Lighthouse reports accessibility **100/100** on both the local build and production.
+It is wrong. `body` paints a radial gradient and `.card` paints a linear gradient, so axe-core
+cannot resolve a background colour for almost anything: it returns **225 of 226 text nodes as
+"incomplete — background color could not be determined due to a background gradient"** and only
+1 real violation. That one violation is the sidebar count on the Curated link, caught *only*
+because "10" is two characters wide — the single-digit counts next to it are identically broken
+and get skipped as "content is too short to determine if it is actual text content".
+
+So: never treat a green Lighthouse run as evidence about this palette. Compute the ratio.
+
+## Tier 1 — accessibility (measured WCAG 2.2 AA failures; fix these first)
+
+- **Check a text colour against the surface it actually sits on, not against `--bg`.** This is the
+  root cause of every contrast failure below: `--muted #a89070` scores **6.11:1 on `--bg #0f1410`
+  and passes**, which is why it was never noticed, but the same token scores **3.78:1 on `--panel
+  #2f3d2a`** (sidebar) and **3.10:1 on `--panel-2 #3d4a32`** (top of the card gradient). Six
+  selectors fail AA: `.was`, `.merchant time`, `.cat-link` and `.fine-note` at 3.10:1,
+  `.nav-link .count` at 3.78:1, and `.crumbs` current item plus `.tag-chip .count` at 4.36:1
+  (`--faint #8c775f` on `--bg`). **[build]** — the pairing table records each ratio as a floor and
+  caps known failures at three, so a regression or a newly declared pairing fails the build.
+- **A muted token has to clear 4.5:1 on the lightest surface it lands on.** `--muted` needs to reach
+  about `#c2b19a` to clear 4.5:1 on `--panel-2` (4.52:1) while staying 8.91:1 on `--bg`; `--faint`
+  needs about `#8e7a62` (4.53:1). Two token edits close all six failures.
+- **The struck-through `was` price and the `Listed <date>` stamp are content, not decoration.** They
+  are the two lowest-contrast strings on the site at 3.10:1, and they are exactly the numbers a deal
+  shopper compares. Do not demote price or recency metadata to `--faint` or `--muted`-on-panel.
+- **Remove the off-canvas drawer from the tab order and the accessibility tree while it is closed.**
+  At 390px the closed sidebar is only translated (`transform: translateX(-105%)`, `display: flex`,
+  `visibility: visible`, no `inert`, no `aria-hidden`), so it still holds **13 focusable elements at
+  x = -321px**. Tab stops 4 through 16 move focus to links nobody can see, with no visible focus ring
+  anywhere on screen — SC 2.4.3 and 2.4.7. Gate it on the checkbox state, not on `transform` alone.
+- **Give the Menu control button semantics and an expanded state.** It is a bare
+  `<label class="menu-btn" for="nav-toggle">` with no `role`, no `aria-expanded`, no `aria-controls`,
+  and the actual tab stop is the 1x1 clipped `#nav-toggle` checkbox (also axe's only landmark
+  violation: it sits outside every landmark). Opening the drawer does not move focus into it and does
+  not trap focus; `Escape` does close it, via `nav.js`.
+- **Every interactive target must be at least 24x24 CSS px (SC 2.5.8, AA in WCAG 2.2).** `.cat-link`
+  renders **22 px tall** on every card — 43 instances on the home page, measured 48x22, 90x22 and
+  125x22 — and breadcrumb links render 37x21 and 40x21 with only 20 px of separation, so the
+  spacing exception does not rescue them. `.card-title a` is 30 px, `.nav-link` 43 px and `.cta`
+  47 px, so padding the two offenders is the whole fix.
+- **Client-side filtering must announce itself.** Clicking `Used` rewrites `.result-count` from
+  "43 deals · newest first" to "6 deals · Used" and hides 37 cards, and that element carries no
+  `aria-live` and no `role="status"` — SC 4.1.3. The zero-match branch is worse: `nav.js` injects
+  `<p class="empty filter-empty">No deals with that tag on this board.</p>` with no live region and
+  without moving focus, so a screen-reader user gets silence and an empty grid. **[build]** — the
+  markup contract (`role="group"` with a name, `<button type="button">` with `aria-pressed`, and the
+  `.result-count` element `nav.js` rewrites) is asserted; the live region still has to be added.
+- **Never colour a focus ring the same as the background of the thing it outlines.** `:focus-visible`
+  draws `2px solid var(--brass)` (`#d4a017`) and `.cta` has `background: var(--accent)` — the same
+  `#d4a017`, so the ring is **1.00:1** against its own button. It is only perceivable because
+  `outline-offset: 3px` pushes it onto the card surface (3.97:1). That is a fragile pass; if the
+  offset ever goes to zero the focus indicator disappears on all 43 primary CTAs.
+
+## Tier 2 — performance and delivery
+
+Production Lighthouse mobile is already strong — performance **99**, LCP **1.5 s**, TBT **0 ms**,
+CLS **0.048**, 113 KiB. The rules below are about the two things that are actually wrong
+(third-party tags) and the one metric that is drifting (layout shift).
+
+- **Verify a third-party tag returns executable JavaScript before shipping it on every page.** The
+  Impact Universal Tracking Tag is injected into all 56 pages, and
+  `https://utt.impactcdn.com/P-A7822267-…1.js` returns **HTTP 403** with
+  `content-type: application/xml` and a 111-byte `<Error><Code>AccessDenied</Code>` body — same
+  result with a browser User-Agent, `Referer` and `Origin` set. Chrome refuses it
+  (`net::ERR_BLOCKED_BY_ORB`), so `impactStat('transformLinks')` and `impactStat('trackImpression')`
+  never run. The site's affiliate attribution is not working.
+- **`script-src` must list every host the deployed site actually loads a script from.** Cloudflare
+  Pages injects `static.cloudflareinsights.com/beacon.min.js`, and `public/_headers` does not allow
+  it, so it is blocked on **every page** with a console error. That is the whole reason production
+  Lighthouse best-practices is **93** rather than 100, and it means the site collects no
+  first-party analytics. The allow-list has to cover CDN-injected scripts, not just ours.
+- **Preload the webfonts, or accept a guaranteed FOUT and the layout shift that comes with it.**
+  Nothing in `<head>` is a `preload`, `preconnect` or `dns-prefetch`, so the three `woff2` files are
+  discovered only when the stylesheet finishes parsing: CSS lands at 525 ms, the fonts are requested
+  at **546 ms** and arrive at **1133–1184 ms**, while FCP is **668 ms**. That is a **465–516 ms**
+  window of fallback text.
+- **All of the measured layout shift is font swap, and it grows with the board.** CLS was 0.0253 at
+  29 deals and is **0.0403** at 43, across three shifts at 1176/1226/1272 ms — exactly when the fonts
+  land. The dominant one (+0.0359) is `.deal-grid` jumping from y=386 to y=360 as the condensed face
+  narrows `.tag-filters` and `.result-count` above it; the rest is `.tag-chip` shrinking 176→137 px,
+  `.topbar-mark` 204→154 px and the `.off` badge 83→73 px. Reserve space for these or preload.
+- **Do not add a fourth webfont face, and justify the third.** The three faces total **73,492 B**,
+  the largest render-affecting payload on the site. Barlow Condensed **600 is 22,308 B — 30% of the
+  font payload — and renders five elements on the home page** (`.eyebrow`, `.rail-kicker` and three
+  `.tag-chip .count` spans) against **239 elements at weight 700**. Dropping it removes a third of
+  the bytes and one of three parallel requests. **[build]** — `font-display: swap` on every face,
+  every `src` present in `dist/fonts/`, and a 76,800 B total budget.
+- **Do not ship desktop-only decoration to mobile.** `brand/stash-deals-emblem.jpg` is **22,760 B —
+  20% of the 111.9 KB mobile payload** and the second-largest resource. It is requested at 211 ms,
+  *ahead of the fonts it competes with*, is served at 320x320 into a 116x116 box, carries `alt=""`,
+  has no `loading` or `fetchpriority`, and at 390px sits off-canvas where nobody sees it until they
+  open the drawer.
+- **Fingerprint anything you want to cache for a long time.** CSS and JS are content-hashed and
+  served `immutable, max-age=31536000`; the fonts are not hashed and sit at `max-age=2592000`, so
+  they cannot get the same treatment without risking a stale pair. Same rule that produced the CSS/JS
+  hashing applies to `/fonts/*` and `/brand/*`.
+- **Keep `<img>` width and height on every image.** **[build]**
+
+## Tier 3 — mobile, zoom and reflow
+
+- **Write the drawer breakpoint in `em`, not `px`.** `@media (max-width: 860px)` cannot match when a
+  user zooms text, but `--sidebar: 19rem` scales: at 1280px with 200% text zoom the sidebar takes
+  **608px — 47.5% of the viewport** — and leaves 672px for content, while still refusing to collapse.
+  An `em` breakpoint makes zoom fold the sidebar into the drawer, which is the behaviour users want.
+- **Bound the listing page.** The home page is **15,433 px tall at 390px** — roughly 18 viewport
+  heights for 43 cards — with **975 DOM elements** and no pagination or load-more, and the deal cap
+  in `loadDeals()` was just raised from 30 to 48. Decide on paging before the ceiling is reached
+  rather than after.
+- **Keep the Curated rail reachable.** The sidebar's content is 901 px tall, so at **1440x800 and
+  below** the rail (y 744–875) is out of view, the sidebar scrolls with no scroll affordance, and the
+  site's one editorial differentiator is invisible on a common laptop. 12 nav links, a 116 px emblem
+  and a tagline are what consume the space.
+- 320px is clean — no horizontal overflow at 320px or 390px on any page type, `h1` 40 px, CTA
+  254x47 — and the sticky topbar is 65 px, 7.7% of an 844 px viewport. Do not regress either.
+
+## Tier 4 — conversion and scannability
+
+- **Every card needs the same price signals in the same place.** 41 of 43 cards show three (`now` at
+  2.35rem amber, struck `was`, `% off` pill). The two unpriced cards show one: `Sale page` at
+  1.45rem, no `was`, no `% off` badge — even though the discount exists in the title ("up to 14%
+  off"). The scanning eye anchors on the amber number and finds prose. Give the unpriced variant its
+  own discount signal in the price slot.
+- **Keep the invisible half of the CTA label.** All 43 primary buttons read "View deal" and nothing
+  else; link purpose (SC 2.4.4) rests entirely on the `sr-only` " at `<merchant>` (opens a new tab)"
+  suffix, and the visible `svg.ext` glyph is the only sighted cue that the click leaves the site.
+  **[build]** — `target="_blank"`, `rel="sponsored noopener noreferrer"`, the `sr-only` suffix and
+  the `.ext` glyph are asserted on every CTA on all 56 pages, not just the home page.
+- **Show a breadcrumb on listing pages, not only on deal pages.** All 11 aisle and curated pages
+  render no `.crumbs` at all, so an entry from search has no upward path except the sidebar — which
+  on mobile is behind the Menu button.
+- **Handle staleness in the UI, not just in the schema.** `priceValidUntil` is `posted + 30 days`
+  and the oldest card is 16 days old, but nothing in the build hides or flags a card past its
+  window, so a dormant `deals.json` keeps showing prices the merchant has already changed.
+- **Do not render a control that cannot work.** With JavaScript off the drawer still opens (it is a
+  CSS checkbox) but the three filter chips are inert buttons. Either degrade them to crawlable
+  filtered URLs or do not paint them.
+- **One `<h1>` per page, no skipped heading levels, and a working skip link.** **[build]** — both
+  asserted across all 56 pages; the skip link matters more than usual here because it is the only
+  way past 13 nav links by keyboard.
+
+## Already correct — do not regress
+
+`prefers-reduced-motion` resets the only two animated things in the stylesheet (`html`
+`scroll-behavior` and the `.sidebar` transition) — **[build]** asserts that any newly animated
+selector is also reset. Filter chips are real `<button type="button">` elements with `aria-pressed`,
+so they are keyboard-operable and the filter state survives in `?tag=`. `Escape` closes the drawer.
+Landmarks and `aria-current="page"` are in place. LCP is a text node (`p.lede`), not an image, so
+there is no image-LCP problem to solve.
+
+## Backlog, in priority order
+
+1. Re-provision the Impact tag (403) and add `static.cloudflareinsights.com` to `script-src`.
+2. Lighten `--muted` to ~`#c2b19a` and `--faint` to ~`#8e7a62`; drop the known-failure cap to 0.
+3. Make the closed drawer `inert`/`aria-hidden`, and give `.menu-btn` `aria-expanded`.
+4. Pad `.cat-link` and the breadcrumb links to 24 px minimum.
+5. Add `role="status"` to `.result-count` and a live region for the zero-match message.
+6. Preload the three fonts; drop the Barlow Condensed 600 face.
+7. Move the emblem behind a `min-width: 861px` fetch, or ship a 232px version.
+8. Switch the drawer breakpoint to `em`.
+9. Give unpriced cards a discount signal; add breadcrumbs to listing pages.
+10. Decide the paging story before the 48-deal cap is hit.
