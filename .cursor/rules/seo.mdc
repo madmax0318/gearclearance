@@ -1,0 +1,110 @@
+---
+description: SEO rules for The Stash Deals, derived from a measured audit of the live site
+globs: ["scripts/build.mjs", "data/deals.json", "public/_headers", "public/robots.txt"]
+alwaysApply: false
+---
+
+# SEO rules
+
+Audited against https://thestash.deals on 2026-09-22 (56 pages, 43 deals). Every rule below cites
+the measurement that motivated it. Numbers are from that audit; re-measure before assuming they hold.
+
+## The one thing to internalise
+
+The Stash Deals is **not the seller**. Google requires that "the merchant has to be the seller of the
+product in order to be eligible for merchant listing experiences", so merchant listing rich results
+(the shopping-style price/availability treatment) are permanently out of reach — do not spend effort
+chasing them, and never mark up the site as the seller to try.
+
+The flip side is a rich result that merchants are *barred* from: Google restricts the **pros and cons**
+appearance to editorial product review pages ("A merchant describing its own product can't use it").
+An editorial deal curator is exactly the qualifying case. That is this site's structural SEO advantage.
+
+## Structured data
+
+- Only single-deal pages (`/deals/<slug>/`) may carry `Product` markup. Google supports product rich
+  results only on pages focused on a single product; listing pages use `ItemList`. The build already
+  splits this correctly — keep it that way.
+- Keep `offers.seller` as the **merchant**, never The Stash Deals. The site does not transact.
+- `Product` + `offers` without `review` or `aggregateRating` makes the Rich Results Test emit a
+  warning. Prefer a nested editorial `Review` carrying `positiveNotes` / `negativeNotes`
+  (`ItemList` + `ListItem`) over adding a fabricated rating. Never invent ratings the site did not collect.
+- `image` is only *recommended* for product snippets, not required, so its absence does not block
+  eligibility — but the site currently ships one `<img>` per deal page and it is the logo, which
+  forfeits Google Images entirely. Treat product imagery as CTR/Images upside, not a correctness fix.
+- `priceValidUntil` is derived as `posted + 30 days`. At audit time 0 of 43 offers were expired,
+  but a stale `deals.json` silently turns every offer invalid. If the board stops being refreshed,
+  expire deals rather than serving dead offers.
+- An `Offer` must carry `price` and `priceCurrency`. Google requires a price whenever `offers` is
+  used, so a deal with no listed price must not emit `Product`/`Offer` at all — and a merchant
+  *collection* or *sale* page is not a single product, which is a second reason not to.
+
+## Indexability
+
+- Exactly one hostname may be indexable. At audit time `gearclearance.mcdaniel.fyi` served
+  byte-identical content with `index, follow` and a permissive `robots.txt`, relying only on the
+  canonical to `thestash.deals`. Note this is **not** a code defect: `build()` already walks all of
+  `dist/` and throws if any output file mentions the prototype host. It is a Cloudflare Pages
+  custom-domain setting — fix it there by detaching the domain or redirecting it, not in the build.
+- Canonicals must be absolute and point at the primary host. `SITE` in `build.mjs` is the single
+  source of truth for generated markup; the guardrail block deliberately pins the literal expected
+  host so a silent `SITE` change cannot ship. Update both together, and never emit a second host.
+- Keep `404.html` on `noindex, follow` and out of `sitemap.xml` (currently correct: 41 URLs, 404 absent).
+- Preserve the trailing-slash convention. Live behaviour is `308` from `/guns` to `/guns/`; every
+  internal link should already point at the canonical slashed form so no hop is needed.
+
+## Titles and descriptions
+
+- Keep `<title>` under ~60 characters so it survives SERP truncation. **17 of 42 pages currently
+  exceed it**, the worst at 100 chars, because the template is `<deal title> — <price> | The Stash
+  Deals` and the 18-char brand suffix plus the price consume the budget. Shorten or drop the suffix
+  on deal pages before lengthening anything else. This is getting worse, not better: it was 17 of 42
+  before the grocery and household batch landed, whose product names are far longer.
+- Keep meta descriptions roughly 120–158 characters. 6 pages exceed 158 and 10 fall under 120.
+- Titles and descriptions must stay unique per URL. Currently 0 duplicates across 56 pages — the
+  build should keep it that way.
+
+## Content and added value
+
+- Google's thin-affiliation policy targets affiliate pages "where the product descriptions and
+  reviews are copied directly from the original merchant without any original content or added
+  value". Word count is explicitly *not* the test. The existing `why` copy (original price context,
+  e.g. per-round maths against big-box counter prices) is the right kind of content — protect it.
+- The exposure is the templated pattern, not the prose: median unique editorial per deal page is
+  **17 words, about 8% of a ~210-word page**. Add value the way Google names it — price context,
+  comparisons, explicit decision criteria, pros and cons — never filler to hit a word count.
+- Never paste merchant marketing copy into `why`, `title`, or a description.
+- A page that exists only to hold affiliate links, with nothing a reader would value if the links
+  were removed, should not be published.
+
+## Affiliate compliance (already correct — do not regress)
+
+- Every outbound merchant link keeps `rel="sponsored noopener noreferrer"`. This is exactly Google's
+  requirement for monetised links. The build asserts it, but **only on the home page** — category
+  and deal pages are unchecked, so keep the rel intact in both card and deal-hero templates.
+- The FTC affiliate disclosure stays on every page, including the fact that the site is not the
+  seller and not an FFL.
+
+## Discovery and growth surface
+
+- Indexable content needs an indexable URL. The `used` and `police-trade-in` facets (6 and 3 deals)
+  exist only as client-side filter chips, so that high-intent inventory has no landing page at all.
+  Any facet worth filtering by is worth a crawlable URL.
+- The site has 11 landing pages (10 aisles + curated) and no hubs below aisle level, while the data
+  already carries 20 distinct merchants and calibers in deal titles. Build hubs from data the board
+  already has rather than inventing thin pages.
+- Only create a hub when it has real inventory and its own reason to exist. A near-empty or
+  near-duplicate hub is a doorway page.
+- `/curated/` currently states it is "a placeholder for editorial tips" and its words are all card
+  boilerplate. An editorial hub with no editorial content should either get real content or stay
+  out of the index.
+
+## Topical focus
+
+- Rankings concentrate where the site has depth and a distinctive angle. `household` is now the
+  largest aisle (7 deals, ahead of guns at 5) after a batch that added toilet paper, a ceramic hand
+  juicer, BBQ rub and granola. Generic grocery clearance is a head-on fight with Amazon and the big
+  coupon sites, and it dilutes the prep and tactical authority the rest of the board is building.
+- Prefer inventory where the site can say something nobody else can — police trade-in pricing,
+  per-round ammo maths, surplus condition grading. That is where the `why` copy is genuinely
+  differentiated, and it is what the brand promise ("grow your stash") already claims.
