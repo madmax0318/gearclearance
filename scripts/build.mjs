@@ -590,9 +590,6 @@ function renderChrome({ depth, activeId, deals, main }) {
 </div>`;
 }
 
-// Impact.com Universal Tracking Tag (account snippet P-A7822267). Permanent, every page.
-const IMPACT_UTT = `<script type="text/javascript">(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A7822267-c904-4255-a7d2-efe7698726ea1.js','script','impactStat',document,window);impactStat('transformLinks');impactStat('trackImpression');</script>`;
-
 function pageShell({ title, description, canonical, robots = "index, follow", ogType = "website", depth, json, body }) {
   const blocks = json
     ? `\n<script type="application/ld+json">${jsonLd({ "@context": "https://schema.org", "@graph": json })}</script>`
@@ -632,7 +629,6 @@ ${canonical ? `<meta name="twitter:url" content="${esc(canonical)}">` : ""}
 <input class="nav-toggle" id="nav-toggle" type="checkbox">
 ${body}
 <script src="${href(depth, JS_PATH)}"></script>
-${IMPACT_UTT}
 </body>
 </html>
 `;
@@ -1083,10 +1079,34 @@ function build() {
   }
   const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
   const sampleDeal = fs.readFileSync(path.join(distDir, "deals", deals[0].slug, "index.html"), "utf8");
-  const impactCount = (html) => html.split(IMPACT_UTT).length - 1;
-  if (impactCount(home) !== 1 || impactCount(guns) !== 1 || impactCount(sampleDeal) !== 1) {
-    throw new Error("Impact tracking tag must appear exactly once in the shared page shell");
+  // Media-partner account declined: the UTT loader returns HTTP 403 (AccessDenied XML, not JS).
+  // Fail closed if any built page or the CSP allowlist still carries that tag.
+  const bannedImpact = [
+    "utt.impactcdn.com",
+    "impactStat",
+    "impactradius.com",
+    "*.impact.com",
+    "7822267",
+    "sha256-uJt3lcT3CAhgH597X2SbUj3+UmhPZdiWUwzo7l/hVxM=",
+  ];
+  function rejectImpactUtt(dir, rel = "") {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      const next = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        rejectImpactUtt(full, next);
+        continue;
+      }
+      if (!entry.name.endsWith(".html") && entry.name !== "_headers") continue;
+      const text = fs.readFileSync(full, "utf8");
+      for (const token of bannedImpact) {
+        if (text.includes(token)) {
+          throw new Error(`${next} must not load or allowlist Impact UTT (${token})`);
+        }
+      }
+    }
   }
+  rejectImpactUtt(distDir);
   // Ownership for application 1655829 is already confirmed. Fail closed if any
   // built HTML still carries the temporary verify script, the old app id, or a leftover id string.
   const forbiddenAvant = ["classic.avantlink.com", "TEMP AvantLink", "1655057", "1655829"];
@@ -1115,17 +1135,7 @@ function build() {
     throw new Error("avantlink_confirmation.txt must be copied unchanged to the site root");
   }
   const headers = fs.readFileSync(path.join(distDir, "_headers"), "utf8");
-  const impactSource = IMPACT_UTT.match(/^<script type="text\/javascript">([\s\S]*)<\/script>$/);
-  if (!impactSource) throw new Error("Impact tag must stay a single inline script");
-  const impactHash = `'sha256-${crypto.createHash("sha256").update(impactSource[1]).digest("base64")}'`;
-  for (const token of [
-    "http://classic.avantlink.com",
-    "https://classic.avantlink.com",
-    "https://utt.impactcdn.com",
-    "https://*.impactradius.com",
-    "https://*.impact.com",
-    impactHash,
-  ]) {
+  for (const token of ["http://classic.avantlink.com", "https://classic.avantlink.com"]) {
     if (!headers.includes(token)) throw new Error(`Content-Security-Policy is missing ${token}`);
   }
   for (const [page, name] of [[home, "home"], [guns, "guns"], [sampleDeal, "deal"]]) {

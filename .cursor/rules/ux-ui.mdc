@@ -79,12 +79,10 @@ CLS **0.048**, 113 KiB. The rules below are about the two things that are actual
 (third-party tags) and the one metric that is drifting (layout shift).
 
 - **Verify a third-party tag returns executable JavaScript before shipping it on every page.** The
-  Impact Universal Tracking Tag is injected into all 56 pages, and
-  `https://utt.impactcdn.com/P-A7822267-…1.js` returns **HTTP 403** with
-  `content-type: application/xml` and a 111-byte `<Error><Code>AccessDenied</Code>` body — same
-  result with a browser User-Agent, `Referer` and `Origin` set. Chrome refuses it
-  (`net::ERR_BLOCKED_BY_ORB`), so `impactStat('transformLinks')` and `impactStat('trackImpression')`
-  never run. The site's affiliate attribution is not working.
+  Impact Universal Tracking Tag was removed from the page shell. The media-partner account was
+  declined, and the loader returned HTTP 403 with an XML AccessDenied body instead of JavaScript,
+  so the browser blocked it and the tracking calls never ran. Do not inject that tag again. A
+  future network tag ships only after its script URL returns executable JavaScript.
 - **`script-src` must list every host the deployed site actually loads a script from.** Cloudflare
   Pages injects `static.cloudflareinsights.com/beacon.min.js`, and `public/_headers` does not allow
   it, so it is blocked on **every page** with a console error. That is the whole reason production
@@ -170,7 +168,7 @@ there is no image-LCP problem to solve.
 
 ## Backlog, in priority order
 
-1. Re-provision the Impact tag (403) and add `static.cloudflareinsights.com` to `script-src`.
+1. Add `static.cloudflareinsights.com` to `script-src` when Cloudflare Web Analytics is enabled. Do not re-add the declined Impact tracking tag.
 2. Lighten `--muted` to ~`#c2b19a` and `--faint` to ~`#8e7a62`; drop the known-failure cap to 0.
 3. Make the closed drawer `inert`/`aria-hidden`, and give `.menu-btn` `aria-expanded`.
 4. Pad `.cat-link` and the breadcrumb links to 24 px minimum.
