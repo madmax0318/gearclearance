@@ -1,3 +1,4 @@
+import { screenCandidates } from "../../src/banned-brands.mjs";
 import { parseEmail } from "./parse-email.js";
 import { applyPriceHistory, recordPublishedSnapshots } from "./price-history.js";
 import { openPriceDb, resolveDbPath } from "./price-history-db.js";
@@ -12,9 +13,13 @@ const HIST_UNAVAILABLE = {
   enrichment: null,
 };
 
-export async function draftQueue({ raw, map, review, env = process.env, priceDb, priceHistory } = {}) {
-  const parsed = await parseEmail(raw, { env });
-  const candidates = parsed.candidates.map((candidate) => {
+export async function draftQueue({ raw, map, review, env = process.env, priceDb, priceHistory, log } = {}) {
+  const parsed = await parseEmail(raw, { env, log });
+  // Collect already dropped banned brands. Screen again after that clean so a later
+  // collector path cannot wrap a banned candidate into a card. AUTO_PUBLISH is unchanged.
+  const screened = screenCandidates(parsed.candidates, { log });
+  const rejected = [...(parsed.rejected ?? []), ...screened.rejected];
+  const candidates = screened.candidates.map((candidate) => {
     if (!candidate.source_url) {
       return { ...candidate, affiliate_url: null, network: "none", wrap_reason: "no_source_url" };
     }
@@ -61,6 +66,7 @@ export async function draftQueue({ raw, map, review, env = process.env, priceDb,
       extractor: parsed.extractor,
       ollama: parsed.ollama,
       candidates: assessed,
+      rejected,
       publish,
     };
   } finally {

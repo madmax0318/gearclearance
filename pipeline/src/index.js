@@ -1,3 +1,12 @@
+export {
+  assertNoBannedLiveDeals,
+  loadBannedBrands,
+  matchBannedBrand,
+  normalizeBannedBrands,
+  screenCandidates,
+  CANDIDATE_MATCH_FIELDS,
+  DEAL_MATCH_FIELDS,
+} from "../../src/banned-brands.mjs";
 export { AISLES, normalizeAisle } from "./aisles.js";
 export { buildPaidAdDraft, PaidAdsError } from "./ads.js";
 export { cleanUrl, inspectUrl, merchantDomain } from "./clean-url.js";

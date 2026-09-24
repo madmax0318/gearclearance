@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { screenCandidates } from "../../src/banned-brands.mjs";
 import { normalizeAisle } from "./aisles.js";
 import { extractUrls, inspectUrl, merchantDomain, scoreProductUrl } from "./clean-url.js";
 import { ollamaExtract } from "./ollama.js";
@@ -303,51 +304,77 @@ function withOllamaNote(candidates, sentence) {
   return candidates.map((row) => assertCandidateShape({ ...row, notes: `${row.notes} ${sentence}` }));
 }
 
+function deliver(result, options, message) {
+  const screened = screenCandidates(result.candidates, {
+    log: options.log,
+    blocklist: options.blocklist,
+    file: options.blocklistFile,
+    extraText: message?.sourceText ?? "",
+  });
+  return { ...result, candidates: screened.candidates, rejected: screened.rejected };
+}
+
 export async function parseEmail(raw, options = {}) {
   const env = options.env ?? process.env;
   const message = decodeMessage(raw);
   const heuristic = buildHeuristicCandidates(message);
   const useOllama = options.useOllama === true || String(env.USE_OLLAMA) === "1";
   if (!useOllama) {
-    return {
-      extractor: "heuristic",
-      ollama: { attempted: false, used: false, reason: "USE_OLLAMA is not 1" },
-      candidates: heuristic,
-    };
+    return deliver(
+      {
+        extractor: "heuristic",
+        ollama: { attempted: false, used: false, reason: "USE_OLLAMA is not 1" },
+        candidates: heuristic,
+      },
+      options,
+      message,
+    );
   }
   try {
     const modeled = await ollamaExtract(message, { env, fetchImpl: options.fetchImpl });
     const grounded = groundCandidates(modeled, message, heuristic);
     if (grounded.length === 0) {
-      return {
-        extractor: "heuristic",
-        ollama: { attempted: true, used: false, reason: "Ollama output was not grounded in the message" },
-        candidates: withOllamaNote(
-          heuristic,
-          "Ollama output discarded because it was not grounded in the message. No affiliate tag was added.",
-        ),
-      };
+      return deliver(
+        {
+          extractor: "heuristic",
+          ollama: { attempted: true, used: false, reason: "Ollama output was not grounded in the message" },
+          candidates: withOllamaNote(
+            heuristic,
+            "Ollama output discarded because it was not grounded in the message. No affiliate tag was added.",
+          ),
+        },
+        options,
+        message,
+      );
     }
-    return {
-      extractor: "ollama",
-      ollama: {
-        attempted: true,
-        used: true,
-        host: env.OLLAMA_HOST || "http://127.0.0.1:11434",
-        model: env.OLLAMA_MODEL || "qwen3.5:35b",
+    return deliver(
+      {
+        extractor: "ollama",
+        ollama: {
+          attempted: true,
+          used: true,
+          host: env.OLLAMA_HOST || "http://127.0.0.1:11434",
+          model: env.OLLAMA_MODEL || "qwen3.5:35b",
+        },
+        candidates: grounded,
       },
-      candidates: grounded,
-    };
+      options,
+      message,
+    );
   } catch (error) {
     const messageText = error?.message || "request failed";
-    return {
-      extractor: "heuristic",
-      ollama: { attempted: true, used: false, error: messageText },
-      candidates: withOllamaNote(
-        heuristic,
-        `Ollama was unavailable (${messageText}). Heuristic extract kept. No affiliate tag was added.`,
-      ),
-    };
+    return deliver(
+      {
+        extractor: "heuristic",
+        ollama: { attempted: true, used: false, error: messageText },
+        candidates: withOllamaNote(
+          heuristic,
+          `Ollama was unavailable (${messageText}). Heuristic extract kept. No affiliate tag was added.`,
+        ),
+      },
+      options,
+      message,
+    );
   }
 }
 

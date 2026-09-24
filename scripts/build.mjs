@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertNoBannedLiveDeals } from "../src/banned-brands.mjs";
 import { normalizeQueue, publishedDeals, SLUG_RE } from "../src/expired-reports.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -386,6 +387,7 @@ function loadDeals() {
       }
     }
   }
+  assertNoBannedLiveDeals(deals);
   const live = publishedDeals(deals);
   if (live.length < 12 || live.length > 150) {
     throw new Error(`Expected 12–150 live deals, found ${live.length}`);
@@ -417,7 +419,7 @@ function loadArchive(liveSlugs) {
     if (deal.status !== "expired") throw new Error(`Archive deal ${deal.slug} must have status expired`);
     if (!deal.title || !deal.merchant) throw new Error(`Archive deal ${deal.slug} is missing a title or merchant`);
     if (deal.category && !categoryById(deal.category)) throw new Error(`Unknown category ${deal.category} on ${deal.slug}`);
-    if (deal.expired_by !== undefined && !["admin", "ion-cannon", "reports"].includes(deal.expired_by)) {
+    if (deal.expired_by !== undefined && !["admin", "ion-cannon", "reports", "brand-blocklist"].includes(deal.expired_by)) {
       throw new Error(`Bad expired_by on ${deal.slug}`);
     }
     let parsed;
