@@ -1,0 +1,16 @@
+---
+description: Brands Dave banned from The Stash Deals. Collectors must skip them.
+alwaysApply: true
+---
+
+# Banned brands
+
+Dave banned these brands from thestash.deals. Do not collect, draft, or publish them.
+
+Source of truth: `data/banned-brands.json` (brand name, case-insensitive word-boundary patterns, scope note).
+
+- **CAA (Command Arms Accessories)** — match the word `CAA` or `Command Arms`. Do not match `CAA` as a substring inside another word.
+- **Uncle Mike's** — match `Uncle Mike's`, `Uncle Mikes`, and slug form `uncle-mikes`.
+- **BlackHawk SERPA** — match the word `SERPA` (holsters, QD, attachments). BlackHawk products that do not say SERPA stay allowed.
+
+`npm run build` fails if a live deal matches. Pipeline Collect/Clean drops matching candidates and logs `banned-brand` before they become cards. Leave `AUTO_PUBLISH` unchanged. Keep merchant URLs bare: do not add affiliate parameters when skipping or removing one of these deals.

@@ -19,6 +19,18 @@ Locked order: **Collect → Clean → Wrap → Review → Publish.**
 
 The default is off (`AUTO_PUBLISH=0`, and an unset variable is also off). Only the exact value `1` counts. An approved review with the flag off stays in review. A flag of `1` with any other review status stays in review. Enabling the flag does not deploy the site and does not change live deal cards.
 
+## Banned brands
+
+Dave banned three brands from [thestash.deals](https://thestash.deals). The source of truth is `data/banned-brands.json` at the repo root (brand name, word-boundary patterns, and a scope note). Matching is case-insensitive.
+
+- **CAA (Command Arms Accessories)** — the standalone word `CAA`, or `Command Arms` (including a slug like `command-arms`). `CAA` inside another word does not match.
+- **Uncle Mike's** — `Uncle Mike's`, `Uncle Mikes`, and slug form `uncle-mikes`.
+- **BlackHawk SERPA** — holsters, QD, and other components whose name includes the word `SERPA`. A BlackHawk product that does not say SERPA stays allowed.
+
+Collect/Clean rejects a matching candidate before Wrap. The candidate is omitted from the card queue and the reason is logged as `banned-brand` plus the brand name and scope note. `AUTO_PUBLISH` is unchanged: the flag still defaults off, and this filter does not publish or unpublish anything by itself. `npm run build` fails closed if a live row in `data/deals.json` matches the same list.
+
+Future collector runs (PreppingDeals, AIM, sale-email WATCH, or anything else that drafts through this package) must skip these brands. Do not add affiliate parameters while dropping one. Merchant URLs stay bare.
+
 ## Historical price gate
 
 Before review hands off to publish, each candidate is looked up in a local SQLite file (`src/price-history.js`). The result is attached as `hist_price` (`ok`, `weak`, or `unknown`). Publish stays human-gated: `AUTO_PUBLISH` still defaults off, and a weak or unknown price does not block the outbox.
@@ -128,6 +140,7 @@ Invented sale mail, no personal data:
 ## What this package will not do
 
 - Invent affiliate tags, MIDs, or publisher ids
+- Draft or publish CAA (Command Arms Accessories), Uncle Mike's, or BlackHawk SERPA components
 - Publish because a model or a missing map said so
 - Buy Meta or X ads for guns, ammo, or weapons-related gear
 - Remove the site’s Impact universal tag or AvantLink confirmation file

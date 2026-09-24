@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "brand": "CAA (Command Arms Accessories)",
+      "patterns": ["\\bcaa\\b", "\\bcommand[-_\\s]+arms\\b"],
+      "scope": "Ban CAA, also sold as Command Arms Accessories. Match the standalone word CAA and the phrase Command Arms, including hyphenated slugs such as command-arms. Do not match CAA as a substring inside another word."
+    },
+    {
+      "brand": "Uncle Mike's",
+      "patterns": ["\\buncle[-_\\s'’]+mike['’]?s\\b"],
+      "scope": "Ban Uncle Mike's. Match Uncle Mike's, Uncle Mikes, and slug forms such as uncle-mikes. Matching is case-insensitive."
+    },
+    {
+      "brand": "BlackHawk SERPA",
+      "patterns": ["\\bserpa\\b"],
+      "scope": "Ban BlackHawk SERPA holsters, SERPA QD, and other SERPA attachments. A match requires the word SERPA. BlackHawk products that do not include SERPA stay allowed."
+    }
+  ]
+}
