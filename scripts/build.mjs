@@ -389,8 +389,8 @@ function loadDeals() {
   }
   assertNoBannedLiveDeals(deals);
   const live = publishedDeals(deals);
-  if (live.length < 12 || live.length > 150) {
-    throw new Error(`Expected 12–150 live deals, found ${live.length}`);
+  if (live.length < 12 || live.length > 160) {
+    throw new Error(`Expected 12–160 live deals, found ${live.length}`);
   }
   for (const category of CATEGORIES) {
     if (!live.some((deal) => deal.category === category.id)) {
