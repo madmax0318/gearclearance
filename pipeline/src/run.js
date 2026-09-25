@@ -1,4 +1,5 @@
 import { screenCandidates } from "../../src/banned-brands.mjs";
+import { applyCountryOfOrigin } from "../../src/country-of-origin.mjs";
 import { parseEmail } from "./parse-email.js";
 import { applyPriceHistory, recordPublishedSnapshots } from "./price-history.js";
 import { openPriceDb, resolveDbPath } from "./price-history-db.js";
@@ -20,12 +21,14 @@ export async function draftQueue({ raw, map, review, env = process.env, priceDb,
   const screened = screenCandidates(parsed.candidates, { log });
   const rejected = [...(parsed.rejected ?? []), ...screened.rejected];
   const candidates = screened.candidates.map((candidate) => {
-    if (!candidate.source_url) {
-      return { ...candidate, affiliate_url: null, network: "none", wrap_reason: "no_source_url" };
+    // Clean fills country_of_origin for guns from the verified lookup. A miss stays null.
+    const withOrigin = applyCountryOfOrigin(candidate);
+    if (!withOrigin.source_url) {
+      return { ...withOrigin, affiliate_url: null, network: "none", wrap_reason: "no_source_url" };
     }
-    const wrapped = wrap(candidate.source_url, map, env);
+    const wrapped = wrap(withOrigin.source_url, map, env);
     return {
-      ...candidate,
+      ...withOrigin,
       source_url: wrapped.source_url,
       affiliate_url: wrapped.affiliate_url,
       needs_affiliate: wrapped.needs_affiliate,

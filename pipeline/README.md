@@ -125,9 +125,26 @@ Empty or missing ids fail closed. The example map uses `https://network.example.
 
 `schema/candidate-deal.schema.json`:
 
-`source_url`, `title`, `price`, `merchant_domain`, `aisle`, `raw_subject`, `raw_from`, `received_at`, `confidence`, `needs_affiliate`, `notes`.
+`source_url`, `title`, `price`, `merchant_domain`, `aisle`, `raw_subject`, `raw_from`, `received_at`, `confidence`, `needs_affiliate`, `notes`, `country_of_origin`.
 
 Aisles match the site: guns, ammo, optics, accessories, apparel, nylon, food-storage, survival, household, gaming, drones. Unknown values stay null instead of being guessed into a paid-ads category.
+
+## Country of origin (guns)
+
+`country_of_origin` is the country where **that model** is manufactured. It is not the brand's headquarters. Collect and Clean fill it from `data/country-of-origin.json` when `aisle` is `guns`. Any other aisle stays `null`. A miss stays `null`. The lookup never guesses, and a model cannot set the field.
+
+Model-specific entries override a `brand_default` on the same brand. Two matches that name different countries also stay empty. A brand default is only for a maker that builds every firearm in one country (Canik, Tisas, Christensen Arms). Springfield, Glock, SIG (aside from the P320 rule), CZ, and Taurus do not have one: those lines are built in more than one country.
+
+Each entry has an `id`, brand and/or model patterns, a `country` that exists in `countries`, an `https` `source`, and a `note` saying why that source is enough. Patterns ignore case and treat spaces, hyphens, and slashes as optional, so `sa-35` matches `SA35` and `10/22` matches `1022`.
+
+To add a model:
+
+1. Confirm the country on the manufacturer's or importer's own page, or on a dealer spec that states it (for example "Country of Origin" or "Made in …").
+2. Add the country to `countries` if it is missing. The value is the visible label (`Made in Croatia`, `Made in the USA`).
+3. Add an entry. Give it `models` when the country is specific to those models. Set `brand_default` only when every firearm from that brand is made in that one country, and do not also list `models` on a default.
+4. Run `npm test`. The suite checks that a Springfield Hellcat resolves to Croatia, a Springfield SA-35 resolves to the United States (Geneseo), an unknown Springfield model stays empty, and a model rule beats a brand default.
+
+The site prints the label from `countries` on Guns cards only, as text. There is no flag emoji. A blank `country_of_origin` on a live gun deal means the model was checked and not verified. One live card is filled from its own listing rather than a model rule: the AIM Surplus Glock 22 Gen3 description calls that batch Austrian, and other Glock 22s are not assumed to be.
 
 ## Fixtures
 

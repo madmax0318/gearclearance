@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { screenCandidates } from "../../src/banned-brands.mjs";
+import { applyCountryOfOrigin } from "../../src/country-of-origin.mjs";
 import { normalizeAisle } from "./aisles.js";
 import { extractUrls, inspectUrl, merchantDomain, scoreProductUrl } from "./clean-url.js";
 import { ollamaExtract } from "./ollama.js";
@@ -311,7 +312,11 @@ function deliver(result, options, message) {
     file: options.blocklistFile,
     extraText: message?.sourceText ?? "",
   });
-  return { ...result, candidates: screened.candidates, rejected: screened.rejected };
+  return {
+    ...result,
+    candidates: screened.candidates.map((candidate) => applyCountryOfOrigin(candidate)),
+    rejected: screened.rejected,
+  };
 }
 
 export async function parseEmail(raw, options = {}) {
