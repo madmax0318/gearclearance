@@ -1865,5 +1865,61 @@
     "tags": ["police-trade-in", "used"],
     "curated": false,
     "posted": "2026-09-24"
+  },
+  {
+    "slug": "aim-msa-cbrn-gas-mask-filter",
+    "title": "MSA CBRN Gas Mask Filter — LEO trade-in",
+    "merchant": "AIM Surplus",
+    "price_now": 19.95,
+    "price_was": 111.00,
+    "category": "survival",
+    "why": "Police trade-in MSA CBRN canisters at $19.95, down from $111 MSRP. AIM notes most have expired dates but are still sealed. Compatible with MSA Advantage 200 LS, 420, 1000, 3000, and 4000 series — confirm on the product page. Not a claim of current certification.",
+    "url": "https://www.aimsurplus.com/products/msa-cbrn-canister-gas-mask-filter",
+    "image": "images/deals/aim-msa-cbrn-gas-mask-filter.png",
+    "tags": ["police-trade-in"],
+    "curated": false,
+    "posted": "2026-09-25"
+  },
+  {
+    "slug": "aim-used-magpul-rvg-rail-vertical-grip",
+    "title": "Magpul RVG Rail Vertical Grip — used",
+    "merchant": "AIM Surplus",
+    "price_now": 14.95,
+    "price_was": 24.95,
+    "category": "accessories",
+    "why": "Used Magpul RVG rail vertical grip at $14.95, down from $24.95 MSRP (about 40% off). Condition is used.",
+    "url": "https://www.aimsurplus.com/products/used-magpul-rvg-rail-vertical-grip-black",
+    "image": "images/deals/aim-used-magpul-rvg-rail-vertical-grip.jpg",
+    "tags": ["used"],
+    "curated": false,
+    "posted": "2026-09-25"
+  },
+  {
+    "slug": "aim-leo-soft-armor-range-target",
+    "title": "Soft Armor Panel — LEO range target",
+    "merchant": "AIM Surplus",
+    "price_now": 39.95,
+    "price_was": 69.95,
+    "category": "accessories",
+    "why": "Expired soft-armor panels sold strictly as range targets and training aids, not for personal protection. $39.95, down from $69.95.",
+    "url": "https://www.aimsurplus.com/products/leo-trade-in-soft-armor-range-target",
+    "image": "images/deals/aim-leo-soft-armor-range-target.jpg",
+    "tags": ["police-trade-in", "used"],
+    "curated": false,
+    "posted": "2026-09-25"
+  },
+  {
+    "slug": "aim-watchguard-vista-bodycam-used",
+    "title": "Watchguard Vista BodyCam — used",
+    "merchant": "AIM Surplus",
+    "price_now": 89.95,
+    "price_was": 139.95,
+    "category": "accessories",
+    "why": "Used law-enforcement Watchguard Vista body camera at $89.95, down from $139.95. Police trade-in sold as-is; verify accessories and function on the product page.",
+    "url": "https://www.aimsurplus.com/products/watchguard-vista-bodycam-used",
+    "image": "images/deals/aim-watchguard-vista-bodycam-used.png",
+    "tags": ["police-trade-in", "used"],
+    "curated": false,
+    "posted": "2026-09-25"
   }
 ]
