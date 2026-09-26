@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "notes": "Model-specific entries override a brand_default for the same brand. A brand_default is only for a maker that builds every firearm in one country. If two matching entries name different countries, the result is empty. Glock, SIG (except the P320), CZ, Taurus, and Springfield 1911s are omitted on purpose: those lines are built in more than one country, and a title does not say which specimen this is.",
+  "countries": {
+    "United States": "Made in the USA",
+    "Croatia": "Made in Croatia",
+    "Turkey": "Made in Turkey",
+    "Austria": "Made in Austria",
+    "Poland": "Made in Poland",
+    "Czech Republic": "Made in the Czech Republic",
+    "Brazil": "Made in Brazil"
+  },
+  "entries": [
+    {
+      "id": "springfield-hs-produkt",
+      "brands": ["springfield"],
+      "models": ["hellcat", "echelon", "hellion", "xd-m", "xd-s", "xd-e", "xd"],
+      "country": "Croatia",
+      "source": "https://www.springfield-armory.com/hs-produkt/",
+      "note": "Springfield's HS Produkt page names the Hellcat, Echelon, Hellion, and XD as partnership firearms and says HS Produkt manufactures 100% of the components for the final firearm. HS Produkt's about page places that in-house production in Karlovac, Croatia (https://www.hs-produkt.hr/about-us). XD-M, XD-S, and XD-E are that XD family; HS Produkt's catalog lists XD Mod.4, XD-M Elite, and XD-S Mod.2. There is no Springfield brand default."
+    },
+    {
+      "id": "springfield-sa-35",
+      "brands": ["springfield"],
+      "models": ["sa-35"],
+      "country": "United States",
+      "source": "https://www.springfield-armory.com/intel/press-releases/springfield-armory-announces-the-release-of-the-sa-35/",
+      "note": "Springfield's 26 October 2021 release says the SA-35 is made in the U.S.A. in Geneseo, Illinois. A claim that unfinished forgings come from Tisas was not confirmed by Springfield, so it is not used. This model rule is what a future Springfield brand default would have to yield to."
+    },
+    {
+      "id": "ruger-10-22",
+      "brands": ["ruger"],
+      "models": ["10/22"],
+      "country": "United States",
+      "source": "https://ruger.com/products/1022/overview.html",
+      "note": "Ruger says every 10/22 rifle is built in its American factories by American workers. Other Ruger lines are not covered by that sentence, so there is no Ruger brand default."
+    },
+    {
+      "id": "sw-mp15-sport-iii",
+      "brands": ["smith"],
+      "models": ["m&p15 sport iii"],
+      "country": "United States",
+      "source": "https://assets.contentstack.io/v3/assets/bltb61dcb3c40854cd9/bltbc39c83c4f7b124f/65ddf8de37599961bf70adad/13807_mp15_Sport3_specsheet.pdf",
+      "note": "The official M&P15 Sport III spec sheet is marked MADE IN U.S.A. Sport II and other M&P15 rifles are not this sheet, so they do not match."
+    },
+    {
+      "id": "sw-mp40",
+      "brands": ["smith"],
+      "models": ["m&p40"],
+      "country": "United States",
+      "source": "https://ir.smith-wesson.com/news-releases/news-release-details/washington-state-patrol-converts-smith-wesson-mp-pistols",
+      "note": "Smith & Wesson's own release says the M&P40 is made in the United States. The Model 910 is a different pistol and is not this entry."
+    },
+    {
+      "id": "sig-p320",
+      "brands": ["sig"],
+      "models": ["p320"],
+      "country": "United States",
+      "source": "https://www.sigsauer.com/media/sigsauer/resources/SIG-SAUER_2026_Update-Brochure.pdf",
+      "note": "SIG Sauer's 2026 brochure heads the P320 section with DESIGNED, ENGINEERED AND MANUFACTURED IN AMERICA. Full-size, Carry, and RXP are this platform, including police trade-ins. Other SIG models are not this page, so there is no SIG brand default."
+    },
+    {
+      "id": "christensen-arms",
+      "brands": ["christensen"],
+      "brand_default": true,
+      "country": "United States",
+      "source": "https://christensenarms.com/support/",
+      "note": "Christensen Arms' support page says Made in the USA and that every rifle is assembled by hand in Gunnison, Utah. The about page says Gunnison, UT / Made in USA (https://christensenarms.com/about/). The company states that its firearms are made in the USA, so a brand default covers the Mesa and the Ridgeline. A model rule can override it if a later Christensen firearm is built somewhere else."
+    },
+    {
+      "id": "canik",
+      "brands": ["canik"],
+      "brand_default": true,
+      "country": "Turkey",
+      "source": "https://www.canik.com/global/contact",
+      "note": "CANiK lists one factory, in Samsun, Türkiye. The Istanbul address is headquarters, not a second plant, and no US plant is listed. A brand default is used until a model is documented as built somewhere else."
+    },
+    {
+      "id": "tisas",
+      "brands": ["tisas"],
+      "brand_default": true,
+      "country": "Turkey",
+      "source": "https://tisasarms.com/en",
+      "note": "TİSAŞ (Trabzon Silah Sanayi) describes itself as a firearms manufacturer in Türkiye and says it manufactures small arms there. The stored country name is Turkey. This default does not cover the Springfield SA-35."
+    },
+    {
+      "id": "p-83-wanad",
+      "brands": [],
+      "models": ["wanad", "p-83"],
+      "country": "Poland",
+      "source": "https://www.aimsurplus.com/products/polish-p-83-wanad-9x18-pistol-w-two-magazines",
+      "note": "AIM Surplus lists these as Original Polish P-83 Wanad pistols and sets the manufacturer to Polish. American Rifleman describes the P-83 as the Radom pistol (Fabryka Broni Łucznik) adopted by the Polish army and police (https://www.americanrifleman.org/content/polish-p-83-wanad-pistol/). Production was in Radom, Poland."
+    }
+  ]
+}

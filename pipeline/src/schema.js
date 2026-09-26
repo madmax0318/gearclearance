@@ -14,6 +14,7 @@ export const CANDIDATE_FIELDS = [
   "confidence",
   "needs_affiliate",
   "notes",
+  "country_of_origin",
 ];
 
 export function candidateRow(partial = {}) {
@@ -29,6 +30,7 @@ export function candidateRow(partial = {}) {
     confidence: 0,
     needs_affiliate: true,
     notes: "",
+    country_of_origin: null,
   };
   for (const key of CANDIDATE_FIELDS) {
     if (partial[key] !== undefined) row[key] = partial[key];
@@ -60,5 +62,8 @@ export function assertCandidateShape(row) {
     throw new Error("confidence must be between 0 and 1");
   }
   if (typeof row.notes !== "string") throw new Error("notes must be a string");
+  if (row.country_of_origin != null && typeof row.country_of_origin !== "string") {
+    throw new Error("country_of_origin must be a string or null");
+  }
   return row;
 }

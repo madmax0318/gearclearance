@@ -7,6 +7,13 @@ export {
   CANDIDATE_MATCH_FIELDS,
   DEAL_MATCH_FIELDS,
 } from "../../src/banned-brands.mjs";
+export {
+  applyCountryOfOrigin,
+  loadCountryTable,
+  matchCountry,
+  normalizeCountryTable,
+  originLabel,
+} from "../../src/country-of-origin.mjs";
 export { AISLES, normalizeAisle } from "./aisles.js";
 export { buildPaidAdDraft, PaidAdsError } from "./ads.js";
 export { cleanUrl, inspectUrl, merchantDomain } from "./clean-url.js";

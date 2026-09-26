@@ -3,7 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertNoBannedLiveDeals } from "../src/banned-brands.mjs";
+import { loadCountryTable, originLabel } from "../src/country-of-origin.mjs";
 import { normalizeQueue, publishedDeals, SLUG_RE } from "../src/expired-reports.mjs";
+
+const COUNTRY_TABLE = loadCountryTable();
+const COUNTRY_NAMES = new Set(Object.keys(COUNTRY_TABLE.countries));
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
@@ -363,6 +367,18 @@ function loadDeals() {
       throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
     }
     if (typeof deal.curated !== "boolean") throw new Error(`curated must be boolean on ${deal.slug}`);
+    if (deal.country_of_origin !== undefined) {
+      if (deal.category !== "guns") throw new Error(`country_of_origin is only for guns on ${deal.slug}`);
+      if (typeof deal.country_of_origin !== "string") {
+        throw new Error(`country_of_origin must be a string on ${deal.slug}`);
+      }
+      if (deal.country_of_origin !== deal.country_of_origin.trim()) {
+        throw new Error(`country_of_origin has stray whitespace on ${deal.slug}`);
+      }
+      if (deal.country_of_origin && !COUNTRY_NAMES.has(deal.country_of_origin)) {
+        throw new Error(`Unknown country_of_origin ${deal.country_of_origin} on ${deal.slug}`);
+      }
+    }
     if (deal.tags !== undefined) {
       if (!Array.isArray(deal.tags)) throw new Error(`tags must be an array on ${deal.slug}`);
       const seen = new Set();
@@ -449,6 +465,17 @@ function dealTags(deal) {
   return Array.isArray(deal.tags) ? deal.tags : [];
 }
 
+function originCountry(deal) {
+  return typeof deal.country_of_origin === "string" ? deal.country_of_origin.trim() : "";
+}
+
+function renderOrigin(deal) {
+  if (deal.category !== "guns") return "";
+  const label = originLabel(originCountry(deal), COUNTRY_TABLE);
+  if (!label) return "";
+  return `<p class="origin">${esc(label)}</p>`;
+}
+
 function renderTagBadges(deal) {
   const tags = dealTags(deal);
   if (!tags.length) return "";
@@ -521,6 +548,7 @@ function renderCard(deal, depth, heading) {
     <a class="cat-link" href="${href(depth, `${category.slug}/`)}">${esc(category.name)}</a>
     ${deal.curated ? '<span class="pill">Curated</span>' : ""}
   </div>
+  ${renderOrigin(deal)}
   ${renderTagBadges(deal)}
   <${tag} class="card-title"><a href="${href(depth, `deals/${deal.slug}/`)}">${esc(deal.title)}</a></${tag}>
   <p class="merchant">${esc(deal.merchant)} · <time datetime="${esc(deal.posted)}">Listed ${esc(formatDate(deal.posted))}</time></p>
@@ -782,6 +810,7 @@ function dealPage(deal, allDeals) {
     <div class="deal-copy">
       ${renderThumb(deal, depth, { linked: false })}
       <p class="eyebrow">${esc(category.name)}${deal.curated ? " · Curated" : ""}</p>
+      ${renderOrigin(deal)}
       ${renderTagBadges(deal)}
       <h1>${esc(deal.title)}</h1>
       <p class="why">${esc(deal.why)}</p>
@@ -810,6 +839,9 @@ function dealPage(deal, allDeals) {
           name: deal.title,
           description: deal.why,
           category: category.name,
+          ...(deal.category === "guns" && originCountry(deal)
+            ? { countryOfOrigin: { "@type": "Country", name: originCountry(deal) } }
+            : {}),
           ...(hasImage(deal) ? { image: `${SITE}/${deal.image}` } : {}),
           mainEntityOfPage: canonical,
           offers: {
@@ -1067,6 +1099,11 @@ function build() {
       if (!offer.price || !offer.priceCurrency) {
         throw new Error(`${deal.slug} has an Offer without price or priceCurrency`);
       }
+      const country = deal.category === "guns" ? originCountry(deal) : "";
+      const marked = product.countryOfOrigin?.name ?? "";
+      if (marked !== country) {
+        throw new Error(`${deal.slug} countryOfOrigin must be ${country || "omitted"}`);
+      }
     } else if (product) {
       throw new Error(`${deal.slug} has no listed price and must not emit Product markup`);
     }
@@ -1080,6 +1117,16 @@ function build() {
     throw new Error("sitemap loc must use https://thestash.deals");
   }
   const guns = fs.readFileSync(path.join(distDir, "guns", "index.html"), "utf8");
+  const ammo = fs.readFileSync(path.join(distDir, "ammo", "index.html"), "utf8");
+  if (ammo.includes('class="origin"')) throw new Error("Origin labels must not render on non-gun cards");
+  const labeled = deals.filter((deal) => deal.category === "guns" && originCountry(deal));
+  if (!labeled.length) throw new Error("Expected at least one guns deal with a country of origin");
+  for (const deal of labeled) {
+    const label = originLabel(originCountry(deal), COUNTRY_TABLE);
+    if (!guns.includes(`<p class="origin">${label}</p>`)) {
+      throw new Error(`Guns aisle is missing the origin label for ${deal.slug}`);
+    }
+  }
   const sampleDeal = fs.readFileSync(path.join(distDir, "deals", deals[0].slug, "index.html"), "utf8");
   // Media-partner account declined: the UTT loader returns HTTP 403 (AccessDenied XML, not JS).
   // Fail closed if any built page or the CSP allowlist still carries that tag.

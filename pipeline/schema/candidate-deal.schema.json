@@ -15,7 +15,8 @@
     "received_at",
     "confidence",
     "needs_affiliate",
-    "notes"
+    "notes",
+    "country_of_origin"
   ],
   "properties": {
     "source_url": { "type": ["string", "null"], "format": "uri" },
@@ -44,6 +45,10 @@
     "received_at": { "type": ["string", "null"], "format": "date-time" },
     "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
     "needs_affiliate": { "type": "boolean" },
-    "notes": { "type": "string" }
+    "notes": { "type": "string" },
+    "country_of_origin": {
+      "type": ["string", "null"],
+      "description": "Country where this specific firearm is manufactured. Null when the guns lookup does not verify one. Never a guess, and unused outside the guns aisle."
+    }
   }
 }

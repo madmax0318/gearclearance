@@ -337,6 +337,24 @@ a {
   list-style: none;
 }
 
+/* Manufacture chip for a guns card. The words are the label. --text is the same pairing as .why on a card. */
+.origin {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 0;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  background: rgba(15, 20, 16, 0.35);
+  border-radius: 3px;
+  padding: 0.14rem 0.48rem 0.16rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
