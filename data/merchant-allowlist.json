@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "entries": [
+    { "host": "botach.com", "params": [] },
+    { "host": "grabagun.com", "params": [] },
+    { "host": "packfreshusa.com", "params": [] },
+    { "host": "palmettostatearmory.com", "params": [] },
+    { "host": "www.palmettostatearmory.com", "params": ["sku"] },
+    { "host": "sport.woot.com", "params": [], "path_pattern": "^/offers/[^/]+$", "family": "amazon" },
+    { "host": "store.steampowered.com", "params": [] },
+    { "host": "tools.woot.com", "params": [], "path_pattern": "^/offers/[^/]+$", "family": "amazon" },
+    { "host": "www.adorama.com", "params": [] },
+    { "host": "www.aimsurplus.com", "params": [] },
+    {
+      "host": "www.amazon.com",
+      "params": [],
+      "path_pattern": "^/dp/[A-Z0-9]{10}$",
+      "normalize": "amazon-asin",
+      "family": "amazon"
+    },
+    { "host": "www.ankersolix.com", "params": [] },
+    { "host": "www.augasonfarms.com", "params": [] },
+    { "host": "www.beprepared.com", "params": [] },
+    { "host": "www.bhphotovideo.com", "params": [] },
+    { "host": "www.brownells.com", "params": [] },
+    { "host": "www.homedepot.com", "params": [] },
+    { "host": "www.jgsales.com", "params": [] },
+    { "host": "www.logitechg.com", "params": [] },
+    { "host": "www.midwayusa.com", "params": [] },
+    { "host": "www.opticsplanet.com", "params": [] },
+    { "host": "www.primaryarms.com", "params": ["q"] },
+    { "host": "www.rei.com", "params": [] },
+    { "host": "www.sportsmans.com", "params": [] },
+    { "host": "www.tacticalassaultgearstore.com", "params": [] },
+    { "host": "www.tacticaldistributors.com", "params": [] },
+    { "host": "www.targetsportsusa.com", "params": [] },
+    { "host": "www.walmart.com", "params": [], "path_pattern": "^/ip/.+/[0-9]+$", "family": "amazon" }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thestash.deals/schema/run-plan.schema.json",
+  "title": "Job run plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["job", "dry_run", "date", "candidates"],
+  "properties": {
+    "job": { "type": "string", "enum": ["watch", "watch-promote", "preppingdeals", "aim", "expiry"] },
+    "dry_run": { "type": "boolean" },
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "branch": { "type": "string", "maxLength": 80, "pattern": "^bot/(watch|preppingdeals|aim|expiry)/[0-9]{8}-[0-9]{1,2}$" },
+    "candidates": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "title", "url", "category"],
+        "properties": {
+          "slug": { "type": "string", "maxLength": 80, "pattern": "^(?:pd|aim|watch)-[a-z0-9-]+$" },
+          "title": { "type": "string", "maxLength": 120 },
+          "url": { "type": "string", "maxLength": 500 },
+          "category": { "type": "string", "maxLength": 40 },
+          "price_now": { "type": ["number", "null"] },
+          "price_was": { "type": ["number", "null"] },
+          "merchant": { "type": "string", "maxLength": 80 },
+          "pick_ids": {
+            "type": "array",
+            "maxItems": 10,
+            "items": { "type": "string", "pattern": "^C[0-9]{2}$" }
+          }
+        }
+      }
+    },
+    "deferred": { "type": "array", "maxItems": 15, "items": { "type": "string", "maxLength": 80 } },
+    "removals": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "evidence"],
+        "properties": {
+          "slug": { "type": "string", "maxLength": 80 },
+          "evidence": { "type": "string", "maxLength": 40 }
+        }
+      }
+    }
+  }
+}

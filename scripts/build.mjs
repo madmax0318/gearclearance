@@ -4,8 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertNoBannedLiveDeals } from "../src/banned-brands.mjs";
 import { normalizeQueue, publishedDeals, SLUG_RE } from "../src/expired-reports.mjs";
+import { checkDealUrl, loadAllowlist, loadExceptions } from "../src/link-policy.mjs";
+import { checkTitle, checkWhy } from "../src/text-policy.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+export const MAX_LIVE_DEALS = 160;
+const EXPIRED_BY = new Set(["admin", "reports", "bot", "brand-blocklist"]);
 const distDir = path.join(rootDir, "dist");
 const SITE_NAME = "The Stash Deals";
 const TAGLINE = "Grow your stash without shrinking your wallet.";
@@ -274,15 +278,6 @@ function hasListedPrice(deal) {
   return hasNowPrice(deal);
 }
 
-function trackingParam(key, value) {
-  const name = String(key).toLowerCase();
-  const val = String(value).toLowerCase();
-  if (name === "tag" || name === "linkid" || name === "link_id") return true;
-  if (name.startsWith("utm_")) return true;
-  if ((name === "ref_" || name === "ref") && val.startsWith("as_li")) return true;
-  return false;
-}
-
 function formatDate(iso) {
   return dateFmt.format(new Date(`${iso}T00:00:00Z`));
 }
@@ -312,10 +307,28 @@ function byNewest(a, b) {
   return b.posted.localeCompare(a.posted) || a.title.localeCompare(b.title);
 }
 
+function dealLink(deal, allowlist, exceptions) {
+  const verdict = checkDealUrl(deal.url, {
+    category: deal.category,
+    slug: deal.slug,
+    allowlist,
+    exceptions,
+  });
+  if (!verdict.ok) throw new Error(`${verdict.reason} on ${deal.slug}`);
+  const title = checkTitle(deal.title);
+  if (!title.ok) throw new Error(`${title.reason} on ${deal.slug}`);
+  if (deal.why != null && deal.why !== "") {
+    const why = checkWhy(deal.why);
+    if (!why.ok) throw new Error(`${why.reason} on ${deal.slug}`);
+  }
+}
+
 function loadDeals() {
   const file = path.join(rootDir, "data", "deals.json");
   const deals = JSON.parse(fs.readFileSync(file, "utf8"));
   if (!Array.isArray(deals)) throw new Error("data/deals.json must be an array");
+  const allowlist = loadAllowlist(path.join(rootDir, "data", "merchant-allowlist.json"));
+  const exceptions = loadExceptions(path.join(rootDir, "data", "policy-exceptions.json"));
   const slugs = new Set();
   for (const deal of deals) {
     for (const key of ["slug", "title", "merchant", "why", "url", "category", "posted"]) {
@@ -346,22 +359,7 @@ function loadDeals() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deal.posted) || Number.isNaN(Date.parse(`${deal.posted}T00:00:00Z`))) {
       throw new Error(`Bad posted date on ${deal.slug}`);
     }
-    let parsed;
-    try {
-      parsed = new URL(deal.url);
-    } catch {
-      throw new Error(`Bad url on ${deal.slug}`);
-    }
-    if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
-    for (const [key, value] of parsed.searchParams.entries()) {
-      if (trackingParam(key, value)) {
-        throw new Error(`Tracking param ${key} on ${deal.slug}`);
-      }
-    }
-    const host = parsed.hostname.toLowerCase();
-    if (host === "example.com" || host.endsWith(".example.com") || host === "gearclearance.mcdaniel.fyi") {
-      throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
-    }
+    dealLink(deal, allowlist, exceptions);
     if (typeof deal.curated !== "boolean") throw new Error(`curated must be boolean on ${deal.slug}`);
     if (deal.tags !== undefined) {
       if (!Array.isArray(deal.tags)) throw new Error(`tags must be an array on ${deal.slug}`);
@@ -389,8 +387,8 @@ function loadDeals() {
   }
   assertNoBannedLiveDeals(deals);
   const live = publishedDeals(deals);
-  if (live.length < 12 || live.length > 160) {
-    throw new Error(`Expected 12–160 live deals, found ${live.length}`);
+  if (live.length < 12 || live.length > MAX_LIVE_DEALS) {
+    throw new Error(`Expected 12–${MAX_LIVE_DEALS} live deals, found ${live.length}`);
   }
   for (const category of CATEGORIES) {
     if (!live.some((deal) => deal.category === category.id)) {
@@ -410,6 +408,8 @@ function loadArchive(liveSlugs) {
   if (!fs.existsSync(file)) return [];
   const deals = JSON.parse(fs.readFileSync(file, "utf8"));
   if (!Array.isArray(deals)) throw new Error("data/expired/deals.json must be an array");
+  const allowlist = loadAllowlist(path.join(rootDir, "data", "merchant-allowlist.json"));
+  const exceptions = loadExceptions(path.join(rootDir, "data", "policy-exceptions.json"));
   const slugs = new Set();
   for (const deal of deals) {
     if (!deal || typeof deal !== "object") throw new Error("Archive deal must be an object");
@@ -419,23 +419,10 @@ function loadArchive(liveSlugs) {
     if (deal.status !== "expired") throw new Error(`Archive deal ${deal.slug} must have status expired`);
     if (!deal.title || !deal.merchant) throw new Error(`Archive deal ${deal.slug} is missing a title or merchant`);
     if (deal.category && !categoryById(deal.category)) throw new Error(`Unknown category ${deal.category} on ${deal.slug}`);
-    if (deal.expired_by !== undefined && !["admin", "ion-cannon", "reports", "brand-blocklist"].includes(deal.expired_by)) {
+    if (deal.expired_by !== undefined && !EXPIRED_BY.has(deal.expired_by)) {
       throw new Error(`Bad expired_by on ${deal.slug}`);
     }
-    let parsed;
-    try {
-      parsed = new URL(deal.url);
-    } catch {
-      throw new Error(`Bad url on ${deal.slug}`);
-    }
-    if (parsed.protocol !== "https:") throw new Error(`URL must be https on ${deal.slug}`);
-    for (const [key, value] of parsed.searchParams.entries()) {
-      if (trackingParam(key, value)) throw new Error(`Tracking param ${key} on ${deal.slug}`);
-    }
-    const host = parsed.hostname.toLowerCase();
-    if (host === "example.com" || host.endsWith(".example.com") || host === "gearclearance.mcdaniel.fyi") {
-      throw new Error(`Deal URL must be a real merchant page on ${deal.slug}`);
-    }
+    dealLink(deal, allowlist, exceptions);
   }
   return deals;
 }
@@ -1414,4 +1401,5 @@ function build() {
   console.log(`Built ${htmlCount} HTML pages and ${deals.length} deals into dist/`);
 }
 
-build();
+const isDirect = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirect) build();

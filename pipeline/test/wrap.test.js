@@ -77,7 +77,7 @@ test("pending and blocked rows never wrap, even when the env id is present", () 
   assert.equal(pending.affiliate_url, pending.source_url);
   assert.equal(pending.affiliate_url.includes("impact-test"), false);
 
-  const blocked = wrap("https://www.amazon.com/dp/B00TEST", jsonMap, { AMAZON_ASSOCIATES_TAG: "stash-test-20" });
+  const blocked = wrap("https://www.amazon.com/dp/B00TEST123", jsonMap, { AMAZON_ASSOCIATES_TAG: "stash-test-20" });
   assert.equal(blocked.needs_affiliate, true);
   assert.equal(blocked.network, "amazon");
   assert.equal(blocked.reason, "status_blocked_tos");
@@ -87,24 +87,24 @@ test("pending and blocked rows never wrap, even when the env id is present", () 
 test("templates that cannot carry the product URL fail closed", () => {
   const map = [
     {
-      merchant_domain: "example-merchant.test",
+      merchant_domain: "primaryarms.com",
       network: "direct",
       status: "live",
       publisher_id_env: "AVANTLINK_AID",
       link_template: "https://network.example.test/static",
     },
     {
-      merchant_domain: "missing-template.test",
+      merchant_domain: "midwayusa.com",
       network: "avantlink",
       status: "live",
     },
   ];
-  const staticTemplate = wrap("https://shop.example-merchant.test/item?id=9", map, { AVANTLINK_AID: "aid-test-only" });
+  const staticTemplate = wrap("https://www.primaryarms.com/holosun-hs403b-micro-red-dot", map, { AVANTLINK_AID: "aid-test-only" });
   assert.equal(staticTemplate.needs_affiliate, true);
   assert.equal(staticTemplate.reason, "template_missing_destination");
-  assert.equal(staticTemplate.affiliate_url, "https://shop.example-merchant.test/item?id=9");
+  assert.equal(staticTemplate.affiliate_url, "https://www.primaryarms.com/holosun-hs403b-micro-red-dot");
 
-  const noTemplate = wrap("https://missing-template.test/item", map, { AVANTLINK_AID: "aid-test-only" });
+  const noTemplate = wrap("https://www.midwayusa.com/product/100157068", map, { AVANTLINK_AID: "aid-test-only" });
   assert.equal(noTemplate.needs_affiliate, true);
   assert.equal(noTemplate.reason, "missing_template");
   assert.equal(noTemplate.affiliate_url, noTemplate.source_url);

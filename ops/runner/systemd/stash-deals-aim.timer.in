@@ -1,0 +1,11 @@
+[Unit]
+Description=Stash deals aim timer
+
+[Timer]
+OnCalendar=@ONCALENDAR@
+AccuracySec=30s
+Persistent=false
+Unit=stash-deals-aim.service
+
+[Install]
+WantedBy=timers.target

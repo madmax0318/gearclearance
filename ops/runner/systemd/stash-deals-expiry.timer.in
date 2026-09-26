@@ -1,0 +1,11 @@
+[Unit]
+Description=Stash deals expiry timer
+
+[Timer]
+OnCalendar=@ONCALENDAR@
+AccuracySec=30s
+Persistent=false
+Unit=stash-deals-expiry.service
+
+[Install]
+WantedBy=timers.target

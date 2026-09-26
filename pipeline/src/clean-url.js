@@ -1,3 +1,5 @@
+import { canonicalize } from "../../src/link-policy.mjs";
+
 const TRACKING_EXACT = new Set([
   "fbclid",
   "gclid",
@@ -73,14 +75,6 @@ function isHopper(hostname) {
   );
 }
 
-function nestedHttp(parsed) {
-  for (const key of ["url", "u", "q", "redirect"]) {
-    const value = parsed.searchParams.get(key);
-    if (value && /^https?:\/\//i.test(value)) return value;
-  }
-  return null;
-}
-
 export function merchantDomain(url) {
   const parsed = typeof url === "string" ? new URL(url) : url;
   return parsed.hostname.toLowerCase().replace(/^www\./, "");
@@ -88,23 +82,7 @@ export function merchantDomain(url) {
 
 export function inspectUrl(input) {
   if (!input || typeof input !== "string") return null;
-  let current = input.trim().replace(/[.,;:]+$/g, "");
-  for (let hop = 0; hop < 3; hop += 1) {
-    let parsed;
-    try {
-      parsed = new URL(current);
-    } catch {
-      return null;
-    }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
-    const nested = nestedHttp(parsed);
-    if (isHopper(parsed.hostname) && nested) {
-      current = nested;
-      continue;
-    }
-    break;
-  }
-
+  const current = input.trim().replace(/[.,;:]+$/g, "");
   let parsed;
   try {
     parsed = new URL(current);
@@ -112,7 +90,6 @@ export function inspectUrl(input) {
     return null;
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
-
   const stripped = [];
   const kept = [];
   for (const [key, value] of parsed.searchParams.entries()) {
@@ -120,11 +97,12 @@ export function inspectUrl(input) {
     else kept.push([key, value]);
   }
   parsed.hash = "";
-  parsed.hostname = parsed.hostname.toLowerCase();
   parsed.search = "";
   for (const [key, value] of kept) parsed.searchParams.append(key, value);
+  const canon = canonicalize(parsed.toString());
+  if (!canon.ok) return null;
   return {
-    url: parsed.toString(),
+    url: canon.url,
     stripped,
     strippedAffiliate: stripped.some((name) => isAffiliateParam(name)),
   };

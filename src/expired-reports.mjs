@@ -1,5 +1,5 @@
 // Shared contract for expired-deal reports.
-// The static site, the Pages function, and the Ion Cannon midday job all use this shape.
+// The static site, the Pages function, and the midday expiry job all use this shape.
 
 export const REPORT_THRESHOLD = 3;
 export const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -7,7 +7,7 @@ export const REPORT_IP_HOURLY_CAP = 8;
 export const REPORT_KEEP_DAYS = 30;
 export const OPEN_REPORT_CAP = 1000;
 export const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const ACTORS = new Set(["admin", "ion-cannon", "reports"]);
+export const ACTORS = new Set(["admin", "bot", "reports"]);
 export const QUEUE_FILE = "data/expired-reports.json";
 export const ARCHIVE_FILE = "data/expired/deals.json";
 export const LIVE_FILE = "data/deals.json";
@@ -15,7 +15,7 @@ export const AFFILIATE_POLICY =
   "Use the stored merchant url exactly. Do not add tags, link ids, utm parameters, or any other affiliate wrapping.";
 
 const REPORT_STATUSES = new Set(["open", "dismissed", "removed"]);
-const REPORT_SOURCES = new Set(["site", "admin", "ion-cannon"]);
+const REPORT_SOURCES = new Set(["site", "admin"]);
 
 export function emptyQueue() {
   return { version: 1, threshold: REPORT_THRESHOLD, reports: [] };
@@ -199,7 +199,7 @@ export function acceptReport(queue, input = {}) {
 }
 
 export function removalCommand(slug) {
-  return `node scripts/expire-deal.mjs remove ${slug} --by ion-cannon --reason verified-expired`;
+  return `node scripts/expire-deal.mjs remove ${slug} --by bot --reason verified-expired`;
 }
 
 export function planVerification(queue, deals, { now = new Date() } = {}) {
@@ -304,7 +304,7 @@ export function applyRemoval({ deals, archive, queue, slug, by, reason, now = ne
   };
 }
 
-export function applyReady({ deals, archive, queue, by = "ion-cannon", reason = "verified-expired", now = new Date() } = {}) {
+export function applyReady({ deals, archive, queue, by = "bot", reason = "verified-expired", now = new Date() } = {}) {
   const plan = planVerification(queue, publishedDeals(deals), { now });
   let state = {
     deals: Array.isArray(deals) ? deals : [],

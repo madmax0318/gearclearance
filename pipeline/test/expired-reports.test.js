@@ -113,7 +113,7 @@ test("triage lists only slugs with enough signal and keeps the merchant url bare
   assert.equal(plan.verify[0].slug, "still-live");
   assert.equal(plan.verify[0].url, "https://www.primaryarms.com/still-live");
   assert.equal(plan.verify[0].url.includes("tag="), false);
-  assert.match(plan.verify[0].remove.command, /^node scripts\/expire-deal\.mjs remove still-live --by ion-cannon --reason verified-expired$/);
+  assert.match(plan.verify[0].remove.command, /^node scripts\/expire-deal\.mjs remove still-live --by bot --reason verified-expired$/);
   assert.deepEqual(plan.verify[0].remove.sets, { status: "expired" });
 });
 
@@ -127,7 +127,7 @@ test("remove moves the deal to the archive, leaves the url unchanged, and closes
     archive: [],
     queue,
     slug: "still-live",
-    by: "ion-cannon",
+    by: "bot",
     reason: "price back to $20",
     now: NOW,
   });
@@ -140,7 +140,7 @@ test("remove moves the deal to the archive, leaves the url unchanged, and closes
   assert.equal(step.archive.length, 1);
   assert.equal(step.archive[0].status, "expired");
   assert.equal(step.archive[0].url, original.url);
-  assert.equal(step.archive[0].expired_by, "ion-cannon");
+  assert.equal(step.archive[0].expired_by, "bot");
   assert.equal(step.archive[0].expired_reason, "price back to $20");
   assert.equal(step.queue.reports.find((item) => item.slug === "still-live").status, "removed");
   assert.equal(step.queue.reports.find((item) => item.slug === "other").status, "open");

@@ -1,0 +1,11 @@
+[Unit]
+Description=Stash deals prepping deals timer
+
+[Timer]
+OnCalendar=@ONCALENDAR@
+AccuracySec=30s
+Persistent=false
+Unit=stash-deals-preppingdeals.service
+
+[Install]
+WantedBy=timers.target

@@ -183,8 +183,7 @@ function productUrls(text) {
     if (!unique.some((item) => item.url === details.url)) unique.push(details);
   }
   unique.sort((a, b) => scoreProductUrl(b.url) - scoreProductUrl(a.url));
-  const good = unique.filter((item) => scoreProductUrl(item.url) > 0);
-  return good.length ? good : unique.slice(0, 1);
+  return unique.filter((item) => scoreProductUrl(item.url) > 0);
 }
 
 function buildHeuristicCandidates(message) {
@@ -353,8 +352,8 @@ export async function parseEmail(raw, options = {}) {
         ollama: {
           attempted: true,
           used: true,
-          host: env.OLLAMA_HOST || "http://127.0.0.1:11434",
-          model: env.OLLAMA_MODEL || "qwen3.5:35b",
+          host: env.OLLAMA_HOST,
+          model: env.OLLAMA_MODEL,
         },
         candidates: grounded,
       },
@@ -362,7 +361,8 @@ export async function parseEmail(raw, options = {}) {
       message,
     );
   } catch (error) {
-    const messageText = error?.message || "request failed";
+    if (error?.exitCode === 2 || error?.exitCode === 3) throw error;
+    const messageText = error?.reason === "non-schema" ? "non-schema" : error?.message || "request failed";
     return deliver(
       {
         extractor: "heuristic",

@@ -1,0 +1,132 @@
+name: ci
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: install pipeline
+        run: |
+          npm ci --prefix pipeline --ignore-scripts
+          npm rebuild better-sqlite3 --prefix pipeline
+      - name: test
+        run: npm test
+      - name: build
+        run: npm run build
+      - name: audit signatures
+        run: npm audit signatures --prefix pipeline
+      - name: actionlint
+        run: |
+          curl -fsSL -o /tmp/actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  /tmp/actionlint.tar.gz" | sha256sum -c
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp
+          /tmp/actionlint -color
+      - name: gitleaks
+        run: |
+          curl -fsSL -o /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tar.gz" | sha256sum -c
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+          /tmp/gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
+
+  bot-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: bot paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_LOGIN: ${{ github.event.pull_request.user.login }}
+          PR_TYPE: ${{ github.event.pull_request.user.type }}
+          BOT_LOGIN: ${{ vars.STASH_BOT_LOGIN }}
+          EXTRA_PREFIXES: ${{ vars.BOT_PATHS_EXTRA_PREFIXES }}
+        run: |
+          set -euo pipefail
+          # bot-paths-begin
+          is_bot=0
+          if [ "${PR_LOGIN:-}" = "${BOT_LOGIN:-}" ] && [ "${PR_TYPE:-}" = "Bot" ]; then
+            is_bot=1
+          fi
+          case "${HEAD_REF:-}" in
+            bot/*)
+              if [ "$is_bot" -ne 1 ]; then
+                echo "bot branch requires the bot account" >&2
+                exit 1
+              fi
+              ;;
+          esac
+          extra=0
+          if [ -n "${EXTRA_PREFIXES:-}" ]; then
+            old_ifs=$IFS
+            IFS=','
+            for prefix in $EXTRA_PREFIXES; do
+              prefix=$(printf '%s' "$prefix" | tr -d ' ')
+              case "${HEAD_REF:-}" in
+                "$prefix"*) extra=1 ;;
+              esac
+            done
+            IFS=$old_ifs
+          fi
+          if [ "$is_bot" -eq 1 ] || [ "$extra" -eq 1 ]; then
+            if [ -n "${FILES_OVERRIDE:-}" ]; then
+              files=$FILES_OVERRIDE
+            else
+              files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+            fi
+            while IFS= read -r file; do
+              [ -n "$file" ] || continue
+              if [ "$file" = "data/deals.json" ] || [ "$file" = "data/expired/deals.json" ]; then
+                continue
+              fi
+              if printf '%s' "$file" | grep -Eq '^public/images/deals/[a-z0-9]+(-[a-z0-9]+)*\.(jpg|webp)$'; then
+                continue
+              fi
+              echo "forbidden $file" >&2
+              exit 1
+            done <<EOF
+$files
+EOF
+          fi
+          # bot-paths-end
+
+  check-bot-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: materialize head
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$HEAD_SHA"
+          mkdir -p "$RUNNER_TEMP/head"
+          git archive "$HEAD_SHA" | tar -x -C "$RUNNER_TEMP/head"
+      - name: check bot diff
+        env:
+          PR_LOGIN: ${{ github.event.pull_request.user.login }}
+          PR_USER_TYPE: ${{ github.event.pull_request.user.type }}
+          BOT_LOGIN: ${{ vars.STASH_BOT_LOGIN }}
+        run: node scripts/check-bot-diff.mjs --head "$RUNNER_TEMP/head"

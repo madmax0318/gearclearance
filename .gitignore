@@ -4,6 +4,7 @@ dist/
 .env
 .env.*
 !.env.example
+stash.env
 pipeline/out/
 pipeline/data/*.sqlite
 pipeline/data/*.sqlite-*

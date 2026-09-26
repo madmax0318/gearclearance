@@ -35,10 +35,10 @@ test("parses a plain-text food storage note without headers", async () => {
   const result = await parseEmailFile(fixture("emergency-food-kit.txt"), { env: {} });
   const row = result.candidates[0];
   assertShape(row);
-  assert.equal(row.source_url, "https://www.emergencyessentials.com/augason-farms-30-day-emergency-food-kit");
+  assert.equal(row.source_url, "https://www.beprepared.com/products/emergency-food-supply-30-days");
   assert.equal(row.source_url.includes("fbclid"), false);
   assert.equal(row.source_url.includes("utm_"), false);
-  assert.equal(row.merchant_domain, "emergencyessentials.com");
+  assert.equal(row.merchant_domain, "beprepared.com");
   assert.equal(row.price, 119);
   assert.equal(row.aisle, "food-storage");
   assert.equal(row.title, "Augason Farms 30-Day Emergency Food Kit");
@@ -117,78 +117,83 @@ test("does not call Ollama unless USE_OLLAMA=1", async () => {
   assert.equal(result.candidates[0].merchant_domain, "primaryarms.com");
 });
 
+const MODEL_ENV = {
+  USE_OLLAMA: "1",
+  OLLAMA_HOST: "http://127.0.0.1:9",
+  OLLAMA_MODEL: "test-model",
+  OLLAMA_DIGEST: "sha256:abc",
+};
+
+function modelFetch(chatBody) {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, body: init?.body ? JSON.parse(init.body) : null });
+    if (String(url).endsWith("/api/tags")) {
+      return { ok: true, async json() { return { models: [{ name: "test-model", digest: "sha256:abc" }] }; } };
+    }
+    return { ok: true, async json() { return { message: { content: JSON.stringify(chatBody) } }; } };
+  };
+  return { calls, fetchImpl };
+}
+
 test("Ollama output fails closed when the URL or affiliate tag is invented", async () => {
   const raw = await import("node:fs/promises").then((fs) => fs.readFile(fixture("primary-arms-hs403b.eml"), "utf8"));
-  const calls = [];
-  const invented = await parseEmail(raw, {
-    env: { USE_OLLAMA: "1", OLLAMA_HOST: "http://127.0.0.1:11434", OLLAMA_MODEL: "qwen3.5:35b" },
-    fetchImpl: async (url, init) => {
-      calls.push({ url, body: JSON.parse(init.body) });
-      return {
-        ok: true,
-        async json() {
-          return {
-            message: {
-              content: JSON.stringify({
-                candidates: [
-                  {
-                    source_url: "https://evil.example/invented-deal?tag=invented-20",
-                    title: "Invented rifle",
-                    price: 1,
-                    aisle: "guns",
-                    needs_affiliate: false,
-                    affiliate_url: "https://evil.example/aff?tag=invented-20",
-                  },
-                ],
-              }),
-            },
-          };
-        },
-      };
-    },
+  const inventedFetch = modelFetch({
+    candidates: [
+      {
+        source_url: "https://evil.example/invented-deal?tag=invented-20",
+        title: "Invented rifle",
+        price: 1,
+        aisle: "guns",
+      },
+    ],
   });
-  assert.equal(calls[0].url, "http://127.0.0.1:11434/api/chat");
-  assert.equal(calls[0].body.model, "qwen3.5:35b");
+  const invented = await parseEmail(raw, { env: MODEL_ENV, fetchImpl: inventedFetch.fetchImpl });
+  const chat = inventedFetch.calls.find((call) => call.url.endsWith("/api/chat"));
+  assert.equal(chat.url, "http://127.0.0.1:9/api/chat");
+  assert.equal(chat.body.model, "test-model");
+  assert.equal(chat.body.think, false);
+  assert.equal(chat.body.options.temperature, 0);
+  assert.equal(Object.hasOwn(chat.body, "tools"), false);
   assert.equal(invented.extractor, "heuristic");
   assert.equal(JSON.stringify(invented).includes("evil.example"), false);
   assert.equal(JSON.stringify(invented).includes("invented-20"), false);
   assert.equal(invented.candidates[0].needs_affiliate, true);
   assert.equal(invented.candidates[0].aisle, "optics");
 
-  const tagged = await parseEmail(raw, {
-    env: { USE_OLLAMA: "1" },
-    fetchImpl: async () => ({
-      ok: true,
-      async json() {
-        return {
-          message: {
-            content:
-              '<think>do not invent a tag</think>{"candidates":[{"source_url":"https://www.primaryarms.com/holosun-hs403b-micro-red-dot?tag=invented-20","title":"Holosun HS403B micro red dot","price":149.99,"aisle":"guns","needs_affiliate":false,"affiliate_url":"https://evil.example/aff?tag=invented-20","confidence":1}]}',
-          },
-        };
+  const taggedFetch = modelFetch({
+    candidates: [
+      {
+        source_url: "https://www.primaryarms.com/holosun-hs403b-micro-red-dot",
+        title: "Holosun HS403B micro red dot",
+        price: 149.99,
+        aisle: "optics",
+        confidence: 1,
       },
-    }),
+    ],
   });
+  const tagged = await parseEmail(raw, { env: MODEL_ENV, fetchImpl: taggedFetch.fetchImpl });
   assert.equal(tagged.extractor, "ollama");
-  assert.equal(tagged.ollama.host, "http://127.0.0.1:11434");
-  assert.equal(tagged.ollama.model, "qwen3.5:35b");
+  assert.equal(tagged.ollama.host, "http://127.0.0.1:9");
+  assert.equal(tagged.ollama.model, "test-model");
   const row = tagged.candidates[0];
   assert.equal(row.source_url, "https://www.primaryarms.com/holosun-hs403b-micro-red-dot");
   assert.equal(row.needs_affiliate, true);
   assert.equal(row.aisle, "optics");
   assert.equal(row.price, 149.99);
   assert.equal(row.confidence <= 0.9, true);
-  assert.equal(JSON.stringify(tagged).includes("invented-20"), false);
   assert.equal(JSON.stringify(tagged).includes("evil.example"), false);
-  assert.match(row.notes, /Ignored affiliate_url/);
 });
 
 test("Ollama connection failure keeps the heuristic candidate", async () => {
   const raw = await import("node:fs/promises").then((fs) => fs.readFile(fixture("emergency-food-kit.txt"), "utf8"));
   const result = await parseEmail(raw, {
-    env: { USE_OLLAMA: "1", OLLAMA_HOST: "http://127.0.0.1:11434" },
-    fetchImpl: async () => {
-      throw new Error("connect ECONNREFUSED 127.0.0.1:11434");
+    env: MODEL_ENV,
+    fetchImpl: async (url) => {
+      if (String(url).endsWith("/api/tags")) {
+        return { ok: true, async json() { return { models: [{ name: "test-model", digest: "sha256:abc" }] }; } };
+      }
+      throw new Error("connect ECONNREFUSED 127.0.0.1:9");
     },
   });
   assert.equal(result.extractor, "heuristic");

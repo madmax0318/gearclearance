@@ -1,0 +1,24 @@
+[Unit]
+Description=Stash deals expiry job
+
+[Service]
+Type=oneshot
+SyslogIdentifier=stash-deals
+ExecStart=@NODE@ @CHECKOUT@/pipeline/src/jobs/run.js expiry
+WorkingDirectory=@CHECKOUT@
+Environment=STASH_ENV=@STASH_ENV@
+Environment=STASH_DRY_RUN=1
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+LockPersonality=yes
+UMask=0077
+StateDirectory=stash-deals
+StateDirectoryMode=0700
+LoadCredential=cred-gh:@CRED_GH@
+LoadCredential=cred-gmail:@CRED_GMAIL@
+LoadCredential=cred-drive:@CRED_DRIVE@
+
+[Install]
+WantedBy=default.target
