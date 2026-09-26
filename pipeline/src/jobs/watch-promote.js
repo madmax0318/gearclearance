@@ -55,6 +55,7 @@ export async function runWatchPromote({
     deferred: [...room.deferred, ...picks.deferred],
     published: false,
   };
+  if (!dryRun && plan.candidates.length === 0) return plan;
   if (!dryRun) {
     const minted = await mint({ ...tokenOptions, fetchImpl });
     await publish({

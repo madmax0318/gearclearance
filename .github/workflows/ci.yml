@@ -86,6 +86,16 @@ jobs:
             IFS=$old_ifs
           fi
           if [ "$is_bot" -eq 1 ] || [ "$extra" -eq 1 ]; then
+            bot_mod=""
+            if git cat-file -e "${BASE_SHA}:pipeline/src/bot-paths.js" 2>/dev/null; then
+              git show "$BASE_SHA:pipeline/src/bot-paths.js" > "${RUNNER_TEMP:?}/bot-paths.mjs"
+              bot_mod="${RUNNER_TEMP}/bot-paths.mjs"
+            elif [ "$BASE_SHA" = "65dcbe0a9b6d9dfd5f0bb55d0373a6b59cd01435" ]; then
+              bot_mod=""
+            else
+              echo "base is missing pipeline/src/bot-paths.js" >&2
+              exit 1
+            fi
             if [ -n "${FILES_OVERRIDE:-}" ]; then
               files=$FILES_OVERRIDE
             else
@@ -93,11 +103,17 @@ jobs:
             fi
             while IFS= read -r file; do
               [ -n "$file" ] || continue
-              if [ "$file" = "data/deals.json" ] || [ "$file" = "data/expired/deals.json" ]; then
-                continue
-              fi
-              if printf '%s' "$file" | grep -Eq '^public/images/deals/[a-z0-9]+(-[a-z0-9]+)*\.(jpg|webp)$'; then
-                continue
+              if [ -n "$bot_mod" ]; then
+                if BOT_PATHS_FILE="$bot_mod" node --input-type=module -e 'import { pathToFileURL } from "node:url"; const mod = await import(pathToFileURL(process.env.BOT_PATHS_FILE).href); process.exit(mod.allowedBotPath(process.argv[1]) ? 0 : 1);' "$file"; then
+                  continue
+                fi
+              else
+                case "$file" in
+                  data/deals.json|data/expired/deals.json) continue ;;
+                esac
+                if printf '%s\n' "$file" | grep -Eq '^public/images/deals/[a-z0-9]+(-[a-z0-9]+)*\.(jpg|webp)$'; then
+                  continue
+                fi
               fi
               echo "forbidden $file" >&2
               exit 1

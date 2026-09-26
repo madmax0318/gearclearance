@@ -1,3 +1,4 @@
+import { allowedBotPath } from "./bot-paths.js";
 import { BRANCH_RE, pullBody, pullTitle } from "./pr-template.js";
 import { codedError } from "./log.js";
 import { fetchHardened } from "./fetch-hardened.js";
@@ -24,13 +25,7 @@ async function githubJson(url, token, options, fetchImpl) {
 const BASE = "main";
 
 export function allowedCommitPath(value) {
-  if (typeof value !== "string" || value.length === 0 || value.length > 240) return false;
-  if (value.includes("\\") || value.includes("\0") || value.startsWith("/")) return false;
-  const parts = value.split("/");
-  if (parts.some((part) => part === "" || part === "." || part === ".." || part.includes(".."))) return false;
-  if (value === "data/expired/deals.json") return true;
-  if (/^data\/deals[^/]*\.json$/.test(value)) return true;
-  return /^public\/images\/deals\/(?:[A-Za-z0-9][A-Za-z0-9._-]*\/)*[A-Za-z0-9][A-Za-z0-9._-]*\.(?:jpg|webp)$/.test(value);
+  return allowedBotPath(value);
 }
 
 function blobPayload(file) {
