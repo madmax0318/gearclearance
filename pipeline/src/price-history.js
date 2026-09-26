@@ -1,3 +1,4 @@
+import { canonicalize } from "../../src/link-policy.mjs";
 import { normalizeAisle } from "./aisles.js";
 import { insertSnapshot, openPriceDb, resolveDbPath, selectHistory } from "./price-history-db.js";
 
@@ -91,11 +92,9 @@ export function assessPrice(price, rows, now = new Date()) {
 
 function skuFromUrl(url) {
   if (!url) return null;
-  try {
-    return new URL(url).searchParams.get("sku");
-  } catch {
-    return null;
-  }
+  const canon = canonicalize(url);
+  if (!canon.ok) return null;
+  return new URL(canon.url).searchParams.get("sku");
 }
 
 export function snapshotFields(candidate, source) {
@@ -261,7 +260,7 @@ export async function lookup(input, options = {}) {
       assessment = { hist: "unknown", last_seen: null, p50_30d: null, reason: "missing_key" };
     } else {
       const rows = selectHistory(db, { merchant, title_norm, sku }).filter(
-        (row) => String(row.currency || "USD").toUpperCase() === currency,
+        (row) => String(row.currency || "USD").toUpperCase() === currency && row.source !== "ingest",
       );
       assessment = assessPrice(input.price, rows, options.now);
     }
@@ -282,13 +281,6 @@ export async function applyPriceHistory(candidate, options = {}) {
     hist_price = await lookup(fields, options);
   } catch {
     hist_price = unavailableAssessment();
-  }
-  if (hist_price.reason === "no_history" && options.db) {
-    try {
-      recordSnapshot(fields, options);
-    } catch {
-      // A missing snapshot must not stop review or publish.
-    }
   }
   return { ...candidate, hist_price };
 }

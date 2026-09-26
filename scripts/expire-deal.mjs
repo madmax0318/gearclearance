@@ -57,12 +57,16 @@ export function execute(args, state, now = new Date()) {
   }
   if (cmd === "remove") {
     if (!slug) return { code: 1, wrote: false, deals, archive, queue, json: { ok: false, error: "missing_slug" } };
+    const by = flag(args, "--by");
+    if (!by) {
+      return { code: 1, wrote: false, deals, archive, queue, json: { ok: false, error: "by_required" } };
+    }
     const step = applyRemoval({
       deals,
       archive,
       queue,
       slug,
-      by: flag(args, "--by") || "admin",
+      by,
       reason: flag(args, "--reason") || "verified-expired",
       now,
     });
@@ -93,11 +97,15 @@ export function execute(args, state, now = new Date()) {
         json: { ok: false, error: "confirm_required", hint: "Re-run with --confirm ready after each merchant url has been checked." },
       };
     }
+    const by = flag(args, "--by");
+    if (!by) {
+      return { code: 1, wrote: false, deals, archive, queue, json: { ok: false, error: "by_required" } };
+    }
     const step = applyReady({
       deals,
       archive,
       queue,
-      by: flag(args, "--by") || "ion-cannon",
+      by,
       reason: flag(args, "--reason") || "verified-expired",
       now,
     });

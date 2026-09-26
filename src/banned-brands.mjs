@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizePolicyText } from "./text-policy.mjs";
 
 const defaultFile = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data/banned-brands.json");
 
@@ -79,7 +80,7 @@ export function matchBannedBrand(record, blocklist = loadBannedBrands(), fields 
     for (const field of fields) {
       const value = record?.[field];
       if (value == null || value === "") continue;
-      const text = String(value);
+      const text = normalizePolicyText(value);
       for (const pattern of entry.patterns) {
         pattern.re.lastIndex = 0;
         if (pattern.re.test(text)) {

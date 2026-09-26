@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "jobs": {
+    "preppingdeals": [
+      { "host": "www.preppingdeals.net", "paths": ["/deals/rss.xml"], "path_prefixes": ["/deals/"] }
+    ],
+    "aim": [
+      { "host": "www.aimsurplus.com", "path_prefixes": ["/"] },
+      { "host": "dvjr4l3xblvos.cloudfront.net", "path_prefixes": ["/products/"] }
+    ],
+    "gmail": [
+      { "host": "gmail.googleapis.com", "path_prefixes": ["/"] },
+      { "host": "oauth2.googleapis.com", "path_prefixes": ["/"] }
+    ],
+    "drive": [
+      { "host": "www.googleapis.com", "path_prefixes": ["/upload/drive/v3/", "/drive/v3/"] },
+      { "host": "oauth2.googleapis.com", "path_prefixes": ["/"] }
+    ],
+    "github": [
+      { "host": "api.github.com", "path_prefixes": ["/"] }
+    ]
+  },
+  "watch_shorteners": [],
+  "impact_hops": {}
+}

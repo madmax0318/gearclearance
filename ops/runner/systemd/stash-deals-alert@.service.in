@@ -1,0 +1,21 @@
+[Unit]
+Description=Stash deals alert
+
+[Service]
+Type=oneshot
+TimeoutStartSec=15min
+Nice=19
+IOSchedulingClass=idle
+SyslogIdentifier=stash-deals
+ExecStart=@NODE@ @CHECKOUT@/pipeline/src/jobs/alert.js
+WorkingDirectory=@CHECKOUT@
+Environment=STASH_ENV=@STASH_ENV@
+Environment=STASH_DRY_RUN=1
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+LockPersonality=yes
+UMask=0077
+StateDirectory=stash-deals
+StateDirectoryMode=0700

@@ -1,0 +1,12 @@
+# public site-verification tokens
+3e7380931531c1b7a6a6405611b848ae9cd537fc:scripts/build.mjs:generic-api-key:529
+3e7380931531c1b7a6a6405611b848ae9cd537fc:scripts/build.mjs:generic-api-key:994
+a8ffe4172fb87c98673cf1a7723de69eb689e1f0:scripts/build.mjs:generic-api-key:637
+a8ffe4172fb87c98673cf1a7723de69eb689e1f0:scripts/build.mjs:generic-api-key:752
+b73abc23f6fef3b85f005ef6038e9fc1663b6bec:scripts/build.mjs:generic-api-key:632
+# same public site-verification tokens on earlier commits that are not in main
+2236c4026496e40c8e5ecee0c4a1f7fa7d84c99e:scripts/build.mjs:generic-api-key:632
+91777b3a4af29c0843ed917fb33f8a1e6c2769b0:scripts/build.mjs:generic-api-key:520
+91777b3a4af29c0843ed917fb33f8a1e6c2769b0:scripts/build.mjs:generic-api-key:985
+e74da78d18ff4c16e20ab0959d58170562753878:scripts/build.mjs:generic-api-key:637
+e74da78d18ff4c16e20ab0959d58170562753878:scripts/build.mjs:generic-api-key:752

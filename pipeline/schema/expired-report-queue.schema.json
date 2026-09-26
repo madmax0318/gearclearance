@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thestash.deals/schema/expired-report-queue.schema.json",
   "title": "Expired deal report queue",
-  "description": "Reader reports that a live deal is no longer a deal. The Ion Cannon midday job reads this file, verifies the stored merchant URL, and then removes the deal. Do not add affiliate parameters to url.",
+  "description": "Reader reports that a live deal is no longer a deal. The midday expiry job reads this file, verifies the stored merchant URL, and then removes the deal. Do not add affiliate parameters to url.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "threshold", "reports"],
@@ -28,14 +28,14 @@
         "id": { "type": "string", "minLength": 8, "maxLength": 180 },
         "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
         "reported_at": { "type": "string", "format": "date-time" },
-        "source": { "enum": ["site", "admin", "ion-cannon"] },
+        "source": { "enum": ["site", "admin"] },
         "status": { "enum": ["open", "dismissed", "removed"] },
         "ip_hash": {
           "type": "string",
           "description": "Truncated salted SHA-256 of the client address. Empty when no address was available. Not a raw IP."
         },
         "resolved_at": { "type": "string", "format": "date-time" },
-        "resolved_by": { "enum": ["admin", "ion-cannon", "reports"] },
+        "resolved_by": { "enum": ["admin", "bot", "reports"] },
         "note": { "type": "string", "maxLength": 200 }
       }
     }

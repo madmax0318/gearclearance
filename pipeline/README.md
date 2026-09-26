@@ -1,6 +1,6 @@
-# The Stash Deals pipeline (Ion Cannon)
+# The Stash Deals pipeline
 
-Parking-lot package for [thestash.deals](https://thestash.deals). It drafts deal rows on Ion Cannon (Ubuntu, Node 22+, optional local Ollama). It does **not** run during `npm run build`, and it does not edit `data/deals.json` or the Impact / AvantLink tags on the static site.
+Parking-lot package for [thestash.deals](https://thestash.deals). It drafts deal rows on the local runner (Node 22, optional local model). It does **not** run during `npm run build`, and it does not edit `data/deals.json` or the Impact / AvantLink tags on the static site.
 
 Locked order: **Collect → Clean → Wrap → Review → Publish.**
 
@@ -55,7 +55,7 @@ Ammo aisles can attach a best-effort Ammoseek cost-per-round when `AMMOSEEK_ENRI
 
 `src/ads.js` is a scaffold for soft goods only: Household, Food storage, and accessories that are not weapon-related. It throws `ADS_WEAPONS_REFUSED` for Guns, Ammo, optics, or weapons-related copy (including weapon lights and magazines). It does not call Meta or X.
 
-## Ion Cannon
+## Local runner
 
 From the repo root, after `npm install` inside `pipeline/` (needed for `better-sqlite3`):
 
@@ -76,13 +76,13 @@ node src/cli.js parse fixtures/emails/midway-9mm-sale.eml
 
 Stdout is JSON. `needs_affiliate` is true. `source_url` is the cleaned merchant URL. Tracker and foreign `tag=` parameters are removed. Nothing in the parser invents a network tag, MID, or publisher id.
 
-Optional Ollama on the box (`qwen3.5:35b` at `http://127.0.0.1:11434`):
+Optional local model. Set the host to the loopback form in `pipeline/.env.example` and the model tag from the private config:
 
 ```bash
 cd pipeline
 USE_OLLAMA=1 \
-OLLAMA_HOST=http://127.0.0.1:11434 \
-OLLAMA_MODEL=qwen3.5:35b \
+OLLAMA_HOST=http://127.0.0.1:<port> \
+OLLAMA_MODEL=<model-tag> \
 node src/cli.js parse fixtures/emails/primary-arms-hs403b.eml
 ```
 
@@ -102,7 +102,7 @@ node src/cli.js ads --aisle household --title 'Portable power station'
 
 Reader reports live in `data/expired-reports.json` at the repo root. The shape is `schema/expired-report-queue.schema.json`. This package does not turn a report into a publish, and it does not invent an affiliate tag while checking a URL.
 
-A midday job on this machine:
+A midday job on the runner:
 
 ```bash
 node src/cli.js expired
@@ -112,7 +112,7 @@ That prints the same plan as `node scripts/expire-deal.mjs triage` from the repo
 
 ## Environment
 
-Copy `pipeline/.env.example` to `pipeline/.env` on the machine. `.env` is gitignored. Publisher IDs stay in Proton Pass and are exported into the shell only when wrapping:
+Copy `pipeline/.env.example` to `pipeline/.env` on the runner. `.env` is gitignored. Publisher ids are exported into the shell only when wrapping:
 
 - `AVANTLINK_AID`
 - `IMPACT_PUBLISHER_ID`

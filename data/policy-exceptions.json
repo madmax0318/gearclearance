@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "slug": "pd-uniden-cmx760-bearcat-cb-radio",
+      "rule": "amazon-soft-goods",
+      "reason": "grandfathered until expiry",
+      "approved_by": "owner",
+      "date": "2026-09-25"
+    },
+    {
+      "slug": "pd-zebco-dock-demon-combo",
+      "rule": "amazon-soft-goods",
+      "reason": "grandfathered until expiry",
+      "approved_by": "owner",
+      "date": "2026-09-25"
+    },
+    {
+      "slug": "pd-sawyer-squeeze-water-filtration",
+      "rule": "amazon-soft-goods",
+      "reason": "grandfathered until expiry",
+      "approved_by": "owner",
+      "date": "2026-09-25"
+    },
+    {
+      "slug": "pd-cold-steel-cutlass-machete",
+      "rule": "amazon-soft-goods",
+      "reason": "grandfathered until expiry",
+      "approved_by": "owner",
+      "date": "2026-09-25"
+    },
+    {
+      "slug": "pd-amazon-basics-folding-camping-cot",
+      "rule": "amazon-soft-goods",
+      "reason": "grandfathered until expiry",
+      "approved_by": "owner",
+      "date": "2026-09-25"
+    },
+    {
+      "slug": "pd-olight-odin-gl-m-flashlight",
+      "rule": "amazon-soft-goods",
+      "reason": "owner-approved one-off exception",
+      "approved_by": "owner",
+      "date": "2026-09-25"
+    }
+  ]
+}

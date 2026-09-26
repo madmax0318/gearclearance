@@ -1,0 +1,8 @@
+title = "stash deals"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "synthetic fixtures only"
+paths = ['''pipeline/fixtures/emails/''']

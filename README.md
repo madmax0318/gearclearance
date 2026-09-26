@@ -6,7 +6,7 @@ Static prototype of an affiliate deal aggregator. Cards link out to merchants. T
 
 **Public site:** [thestash.deals](https://thestash.deals)
 
-The published site is the `dist/` folder from `npm run build`. Canonical URLs, Open Graph, Twitter, JSON-LD, the sitemap, and `robots.txt` use `https://thestash.deals`. The former prototype hostname is retired. The Pages build does not run email ingest, a scraper, or a live affiliate API. Optional Ion Cannon drafts live in `pipeline/` and are separate from `npm run build`.
+The published site is the `dist/` folder from `npm run build`. Canonical URLs, Open Graph, Twitter, JSON-LD, the sitemap, and `robots.txt` use `https://thestash.deals`. The former prototype hostname is retired. The Pages build does not run email ingest, a scraper, or a live affiliate API. Optional local drafts live in `pipeline/` and are separate from `npm run build`.
 
 ## Local preview
 
@@ -17,7 +17,7 @@ npm run build
 npm run preview
 ```
 
-Open http://localhost:4173
+Open the URL printed by `npm run preview`.
 
 `npm run preview` serves `dist/` and resolves category paths such as `/guns/` and `/ammo/`. After a build, `dist/index.html` also opens on its own and shows the sidebar, the latest deals, and the footer disclosure. Use the preview server for the category routes.
 
@@ -37,7 +37,7 @@ The stylesheet and menu script are written with a content hash in the filename (
 
 The public hostname is `thestash.deals`. Canonicals, the sitemap, and structured data use that host only.
 
-`gearclearance.mcdaniel.fyi` is retired. This repository does not remove a Cloudflare Pages custom domain. If that hostname is still attached to the Pages project, remove it in the Cloudflare Pages custom-domain settings.
+The former prototype hostname is retired. This repository does not remove a Cloudflare Pages custom domain. If an old hostname is still attached to the Pages project, remove it in the Cloudflare Pages custom-domain settings.
 
 ## Information architecture
 
@@ -104,7 +104,7 @@ Reports are stored in `data/expired-reports.json` (schema: `pipeline/schema/expi
 
 `ip_hash` is a salted hash, not a raw address. Reports with an empty hash share one reporter, so they cannot meet the threshold by themselves. `status` is `open`, `dismissed`, or `removed`.
 
-On Cloudflare Pages, `functions/api/report-expired.js` appends a row by committing that file through the GitHub Contents API. Set `GITHUB_TOKEN` (contents read/write on this repo) in Cloudflare Pages → Settings → Environment variables for Production (and Preview, if preview deployments should accept reports). Optional: `GITHUB_REPOSITORY` (`madmax0318/gearclearance`), `GITHUB_BRANCH` (`main`), and `REPORT_IP_SALT`. If the token is missing or blank the endpoint returns `503` with `queue_unconfigured` and stores nothing. Keep the token in the Pages secret store only.
+On Cloudflare Pages, `functions/api/report-expired.js` appends a row by committing that file through the GitHub Contents API. Set `GITHUB_TOKEN` (contents read/write on this repo) in Cloudflare Pages → Settings → Environment variables for Production. Optional: `GITHUB_REPOSITORY` (`madmax0318/gearclearance`), `GITHUB_BRANCH` (`main`), and `REPORT_IP_SALT`. If the token is missing or blank the endpoint returns `503` with `queue_unconfigured` and stores nothing. Keep the token in the Pages secret store only.
 
 Live slugs are taken from GitHub `data/deals.json` when that read returns a deal array. If it does not, the function tries the Pages `ASSETS` binding for `/report-slugs.json`, then the list `npm run build` writes to `functions/report-slugs.js` (the same slugs as `dist/report-slugs.json`). The function does not `fetch` this site’s own hostname; that same-zone subrequest aborted the Worker with Cloudflare error 1101. `npm run preview` writes the queue locally so the button can be tried without GitHub.
 
@@ -120,14 +120,14 @@ From the repo root:
 ```bash
 node scripts/expire-deal.mjs triage
 node scripts/expire-deal.mjs remove <slug> --by admin --reason "price reverted"
-node scripts/expire-deal.mjs apply-ready --by ion-cannon --confirm ready
+node scripts/expire-deal.mjs apply-ready --by bot --confirm ready
 ```
 
 `triage` only prints a plan. `remove` moves one live row into `data/expired/deals.json`, sets `expired_at`, `expired_by`, and `expired_reason`, and marks that slug’s open reports `removed`. The merchant `url` is copied unchanged. `apply-ready` does that for every slug whose distinct reporters are at least `threshold` (3). It refuses to run without `--confirm ready`.
 
-### Midday Ion Cannon job
+### Midday expiry job
 
-The verifier is a separate local-LLM pass. It should not wrap links or invent affiliate parameters.
+The verifier is a separate local pass. It should not wrap links or invent affiliate parameters.
 
 1. `git pull` so `data/expired-reports.json` includes reports committed by the Pages function.
 2. `node scripts/expire-deal.mjs triage` (or, inside `pipeline/` after `npm install`, `node src/cli.js expired`).
@@ -173,4 +173,4 @@ Below roughly 48px the illustration stops reading, so the mobile topbar and `fav
 - `scripts/preview.mjs` — local static server
 - `src/site.css`, `src/nav.js`, `src/fonts/` — styles, drawer behavior, tag filters, OFL fonts
 - `public/_headers`, `public/favicon.svg`, `public/brand/` — copied into `dist/` (see Brand assets)
-- `pipeline/` — Ion Cannon parking-lot package (Collect → Clean → Wrap → Review → Publish), plus a local SQLite hist-price check that does not publish on its own. Not part of the Pages build. `npm test` runs that package and needs Node 22 after `npm install` inside `pipeline/`. See `pipeline/README.md`.
+- `pipeline/` — parking-lot package (Collect → Clean → Wrap → Review → Publish), plus a local SQLite hist-price check that does not publish on its own. Not part of the Pages build. `npm test` runs that package and needs Node 22 after `npm install` inside `pipeline/`. See `pipeline/README.md`.

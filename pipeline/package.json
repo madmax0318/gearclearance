@@ -3,15 +3,21 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "description": "The Stash Deals parking-lot pipeline for Ion Cannon. Collect → Clean → Wrap → Review → Publish. Not used by the static site build.",
+  "description": "The Stash Deals parking-lot pipeline. Collect, clean, wrap, review, publish. Not used by the static site build.",
   "engines": {
-    "node": ">=22"
+    "node": "22"
   },
   "scripts": {
     "test": "node --test",
+    "check-install-scripts": "node src/check-install-scripts.js",
     "parse": "node src/cli.js parse"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3"
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1",
+    "better-sqlite3": "13.0.3",
+    "htmlparser2": "10.0.0",
+    "sharp": "0.34.4",
+    "undici": "7.16.0"
   }
 }

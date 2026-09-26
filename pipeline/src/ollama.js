@@ -1,34 +1,54 @@
-const SYSTEM_PROMPT = `You extract candidate deal rows from a sale email for The Stash Deals.
-Return JSON only, shaped as {"candidates":[{...}]}.
-Rules:
-- Use only facts present in the email. Unknown fields are null.
-- source_url must be a URL copied from the email. Do not invent URLs, prices, or merchants.
-- Do not return affiliate_url. Do not add tag, MID, publisher id, website id, or tracking parameters.
-- price is a number or null.
-- aisle is one of guns, ammo, optics, accessories, apparel, nylon, food-storage, survival, household, gaming, drones, or null.
-- needs_affiliate must be true.
-- Never guess an affiliate tag.`;
+import { isLoopbackOllamaHost } from "./config.js";
+import { codedError } from "./log.js";
+import { loadSchema, validateSchema } from "./validate.js";
+
+const INPUT_CAP = 16_000;
+
+export function sanitizeModelInput(text) {
+  const cleaned = String(text ?? "")
+    .normalize("NFKC")
+    .replace(/\p{Cc}|\p{Cf}/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, INPUT_CAP);
+  return `<source-text>\n${cleaned}\n</source-text>`;
+}
 
 export function parseModelJson(content) {
-  const stripped = String(content)
-    .replace(/<think>[\s\S]*?<\/think>/gi, "")
-    .trim();
-  const start = stripped.indexOf("{");
-  const end = stripped.lastIndexOf("}");
-  if (start === -1 || end <= start) throw new Error("Ollama returned no JSON object");
-  const data = JSON.parse(stripped.slice(start, end + 1));
-  const list = Array.isArray(data) ? data : data.candidates || data.deals || [data];
-  if (!Array.isArray(list)) throw new Error("Ollama JSON had no candidates");
-  return list;
+  let data;
+  try {
+    data = JSON.parse(String(content ?? "").trim());
+  } catch {
+    const error = codedError(0, "non-schema");
+    error.reason = "non-schema";
+    throw error;
+  }
+  const result = validateSchema("model-output.schema.json", data);
+  if (!result.ok) {
+    const error = codedError(0, "non-schema");
+    error.reason = "non-schema";
+    throw error;
+  }
+  return data.candidates || [];
+}
+
+async function readTags(host, fetchImpl) {
+  const response = await fetchImpl(`${host}/api/tags`, { method: "GET" });
+  if (!response?.ok) throw codedError(4, "tags");
+  return response.json();
 }
 
 export async function ollamaExtract(message, { env, fetchImpl } = {}) {
-  const host = String(env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/$/, "");
-  const model = env.OLLAMA_MODEL || "qwen3.5:35b";
-  const timeout = Number(env.OLLAMA_TIMEOUT_MS || 30000);
+  const host = String(env.OLLAMA_HOST || "");
+  const model = env.OLLAMA_MODEL;
+  const digest = env.OLLAMA_DIGEST;
+  if (!isLoopbackOllamaHost(host) || !model || !digest) throw codedError(2, "E_CONFIG");
   const fetchFn = fetchImpl ?? globalThis.fetch;
-  if (typeof fetchFn !== "function") throw new Error("fetch is not available");
-
+  if (typeof fetchFn !== "function") throw codedError(2, "E_CONFIG");
+  const tags = await readTags(host, fetchFn);
+  const found = (tags?.models || []).find((item) => item.name === model || item.model === model);
+  if (!found || found.digest !== digest) throw codedError(3, "digest");
+  const timeout = Number(env.OLLAMA_TIMEOUT_MS || 30000);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Number.isFinite(timeout) ? timeout : 30000);
   try {
@@ -38,20 +58,28 @@ export async function ollamaExtract(message, { env, fetchImpl } = {}) {
       body: JSON.stringify({
         model,
         stream: false,
-        format: "json",
+        format: loadSchema("model-output.schema.json"),
+        think: false,
+        options: { temperature: 0 },
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: message.sourceText },
+          {
+            role: "system",
+            content:
+              "Extract candidate deals from the labeled source text. Return JSON only. Do not invent URLs, prices, or affiliate parameters. needs_affiliate stays true.",
+          },
+          { role: "user", content: sanitizeModelInput(message.sourceText) },
         ],
       }),
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`Ollama HTTP ${response.status}`);
+    if (!response.ok) throw codedError(4, `HTTP ${response.status}`);
     const data = await response.json();
-    const content = data?.message?.content ?? data?.response ?? "";
+    const content = data?.message?.content ?? "";
     return parseModelJson(content);
   } catch (error) {
-    if (error?.name === "AbortError") throw new Error("Ollama request timed out");
+    if (error?.reason === "non-schema") throw error;
+    if (error?.exitCode) throw error;
+    if (error?.name === "AbortError") throw codedError(4, "timeout");
     throw error;
   } finally {
     clearTimeout(timer);

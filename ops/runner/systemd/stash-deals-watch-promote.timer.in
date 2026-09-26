@@ -1,0 +1,11 @@
+[Unit]
+Description=Stash deals watch promote timer
+
+[Timer]
+OnCalendar=@ONCALENDAR@
+AccuracySec=30s
+Persistent=false
+Unit=stash-deals-watch-promote.service
+
+[Install]
+WantedBy=timers.target

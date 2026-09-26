@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thestash.deals/schema/deal-row.schema.json",
+  "title": "Published deal row",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slug", "title", "merchant", "price_now", "price_was", "category", "why", "url", "curated", "posted"],
+  "properties": {
+    "slug": { "type": "string", "maxLength": 80, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "merchant": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "price_now": { "type": ["number", "null"] },
+    "price_was": { "type": ["number", "null"] },
+    "category": {
+      "type": "string",
+      "enum": ["guns", "ammo", "optics", "accessories", "apparel", "nylon", "food-storage", "survival", "household", "gaming", "drones"]
+    },
+    "why": { "type": "string", "minLength": 1, "maxLength": 280 },
+    "url": { "type": "string", "maxLength": 500, "pattern": "^https://[^\\s]+$" },
+    "curated": { "type": "boolean" },
+    "posted": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "tags": {
+      "type": "array",
+      "maxItems": 8,
+      "items": { "type": "string", "maxLength": 40, "pattern": "^[a-z0-9-]+$" }
+    },
+    "image": { "type": "string", "maxLength": 180, "pattern": "^images/deals/[a-z0-9]+(?:-[a-z0-9]+)*\\.(jpg|webp)$" },
+    "status": { "type": "string", "enum": ["live", "expired"] },
+    "expired_at": { "type": "string", "maxLength": 40 },
+    "expired_by": { "type": "string", "enum": ["admin", "reports", "bot", "brand-blocklist"] },
+    "expired_reason": { "type": "string", "maxLength": 160 }
+  }
+}
