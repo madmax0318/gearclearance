@@ -65,5 +65,38 @@
     "expired_at": "2026-09-24T23:52:00.000Z",
     "expired_by": "brand-blocklist",
     "expired_reason": "banned-brand"
+  },
+  {
+    "slug": "dji-mini-4-pro",
+    "title": "DJI Mini 4 Pro (drone only)",
+    "merchant": "B&H",
+    "price_now": 759,
+    "price_was": 959,
+    "category": "drones",
+    "why": "Drone-only Mini 4 Pro, no Fly More kit. Street price on the bare aircraft has been closer to $900.",
+    "url": "https://www.bhphotovideo.com/c/product/1784782-REG/dji_cp_ma_00000731_01_mini_4_pro_drone.html",
+    "curated": true,
+    "posted": "2026-09-20",
+    "status": "expired",
+    "expired_at": "2026-09-26T17:05:56.737Z",
+    "expired_by": "bot",
+    "expired_reason": "verified-expired"
+  },
+  {
+    "slug": "packfreshusa-mylar-gallon-50",
+    "title": "PackFreshUSA 1-Gallon Mylar Bags with Oxygen Absorbers — 50",
+    "merchant": "PackFreshUSA",
+    "price_now": 34.95,
+    "price_was": 49.95,
+    "category": "food-storage",
+    "why": "Bags and absorbers in one carton for dry staples. Buying the two pieces separately has been landing near $50.",
+    "url": "https://packfreshusa.com/gallon-7-mil-premium-century-mylar-bags-and-oxygen-absorbers/",
+    "image": "images/deals/packfreshusa-mylar-gallon-50.jpg",
+    "curated": false,
+    "posted": "2026-09-08",
+    "status": "expired",
+    "expired_at": "2026-09-26T17:05:56.771Z",
+    "expired_by": "bot",
+    "expired_reason": "verified-expired"
   }
 ]

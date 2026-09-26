@@ -16,7 +16,7 @@
     "slug": "anker-521-power-station",
     "title": "Anker 521 Portable Power Station (256Wh)",
     "merchant": "Anker",
-    "price_now": 199.0,
+    "price_now": 199,
     "price_was": 299.99,
     "category": "household",
     "why": "Enough stored power for phones, a radio, and a small fan. Anker’s own price has been sitting near $280.",
@@ -29,12 +29,15 @@
     "slug": "glock-19-gen5-mos",
     "title": "Glock 19 Gen5 MOS 9mm",
     "merchant": "Palmetto State Armory",
-    "price_now": 499.0,
-    "price_was": 649.0,
+    "price_now": 499,
+    "price_was": 649,
     "category": "guns",
     "why": "Department trade-in Gen5 MOS pistols still list nearer $620 when sold as new. A used police trade-in under $500 is the one that sells through.",
     "url": "https://palmettostatearmory.com/glock-19-mos-gen-5-pistol-with-front-serrations-black-pa195s203m.html",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": true,
     "posted": "2026-09-20"
   },
@@ -48,7 +51,9 @@
     "why": "The default 1,000-lumen weapon light on a lot of builds. A used HL-X under $90 sits below the usual street price for a new one.",
     "url": "https://www.midwayusa.com/product/1018571930",
     "image": "images/deals/streamlight-protac-hl-x.jpg",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": true,
     "posted": "2026-09-20"
   },
@@ -61,7 +66,9 @@
     "category": "optics",
     "why": "Agency trade-in of the usual first red dot. It has not spent much time this far under $200.",
     "url": "https://www.primaryarms.com/search?q=Holosun+HS403B",
-    "tags": ["police-trade-in"],
+    "tags": [
+      "police-trade-in"
+    ],
     "curated": true,
     "posted": "2026-09-19"
   },
@@ -81,7 +88,7 @@
     "slug": "augason-farms-30-day",
     "title": "Augason Farms 30-Day Emergency Food Kit",
     "merchant": "Emergency Essentials",
-    "price_now": 119.0,
+    "price_now": 119,
     "price_was": 184.99,
     "category": "food-storage",
     "why": "A one-person 30-day bucket under $120. The same kit has been listing closer to $170.",
@@ -113,7 +120,9 @@
     "why": "Used wood-stock carbine, not a rebate bundle. Everyday new pricing has been stuck just over $300.",
     "url": "https://www.sportsmans.com/shooting-gear-gun-supplies/rifles/ruger-1022-carbine-22-long-rifle-satin-blackhardwood-semi-automatic-rifle-185in/p/301829",
     "image": "images/deals/ruger-10-22-carbine.jpg",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-17"
   },
@@ -145,12 +154,14 @@
     "slug": "smith-wesson-mp15-sport-iii",
     "title": "Smith & Wesson M&P15 Sport III 5.56",
     "merchant": "GrabAGun",
-    "price_now": 679.0,
+    "price_now": 679,
     "price_was": 849.99,
     "category": "guns",
     "why": "Sport III rifles have been sticky around $800 new. This one is a police trade-in, not a blemished new gun.",
     "url": "https://grabagun.com/smith-and-wesson-m-p15-sport-iii-5-56-223-rem-16-barrel-30-rounds.html",
-    "tags": ["police-trade-in"],
+    "tags": [
+      "police-trade-in"
+    ],
     "curated": false,
     "posted": "2026-09-15"
   },
@@ -170,7 +181,7 @@
     "slug": "mountain-house-classic-bucket",
     "title": "Mountain House Classic Bucket — 24 servings",
     "merchant": "Walmart",
-    "price_now": 79.0,
+    "price_now": 79,
     "price_was": 114.99,
     "category": "food-storage",
     "why": "Just over $3 a serving for freeze-dried entrees with a long shelf life. Recent club pricing has been nearer $4.50.",
@@ -182,7 +193,7 @@
     "slug": "winchester-556-m193-150",
     "title": "Winchester 5.56 55gr M193 — 150 rounds",
     "merchant": "Brownells",
-    "price_now": 89.0,
+    "price_now": 89,
     "price_was": 124.99,
     "category": "ammo",
     "why": "About 59¢ a round for M193-style brass. Recent case splits have been closer to 75¢.",
@@ -194,8 +205,8 @@
     "slug": "adventure-medical-sportsman-200",
     "title": "Adventure Medical Kits Sportsman 200",
     "merchant": "REI",
-    "price_now": 24.0,
-    "price_was": 36.0,
+    "price_now": 24,
+    "price_was": 36,
     "category": "survival",
     "why": "A compact kit for blisters, cuts, and the small stuff. Replacing the contents one packet at a time costs more than the kit.",
     "url": "https://www.rei.com/b/adventure-medical-kits/c/first-aid-kits",
@@ -206,8 +217,8 @@
     "slug": "blue-force-gear-vickers-sling",
     "title": "Blue Force Gear Vickers Combat Sling",
     "merchant": "Primary Arms",
-    "price_now": 42.0,
-    "price_was": 65.0,
+    "price_now": 42,
+    "price_was": 65,
     "category": "accessories",
     "why": "Padded Vickers slings rarely print under $55. This is the standard black sling, not a closeout colorway.",
     "url": "https://www.primaryarms.com/blue-force-gear-vickers-padded-push-button-sling-black",
@@ -216,24 +227,11 @@
     "posted": "2026-09-09"
   },
   {
-    "slug": "packfreshusa-mylar-gallon-50",
-    "title": "PackFreshUSA 1-Gallon Mylar Bags with Oxygen Absorbers — 50",
-    "merchant": "PackFreshUSA",
-    "price_now": 34.95,
-    "price_was": 49.95,
-    "category": "food-storage",
-    "why": "Bags and absorbers in one carton for dry staples. Buying the two pieces separately has been landing near $50.",
-    "url": "https://packfreshusa.com/gallon-7-mil-premium-century-mylar-bags-and-oxygen-absorbers/",
-    "image": "images/deals/packfreshusa-mylar-gallon-50.jpg",
-    "curated": false,
-    "posted": "2026-09-08"
-  },
-  {
     "slug": "black-decker-20v-drill-kit",
     "title": "BLACK+DECKER 20V MAX Drill/Driver Kit",
     "merchant": "Home Depot",
-    "price_now": 59.0,
-    "price_was": 99.0,
+    "price_now": 59,
+    "price_was": 99,
     "category": "household",
     "why": "Battery, charger, and a basic household drill at 40% off. It is a home kit, not a jobsite driver.",
     "url": "https://www.homedepot.com/p/BLACK-DECKER-20V-MAX-Lithium-Ion-Cordless-3-8-in-Drill-Driver-with-Battery-1-5Ah-and-Charger-LDX120C/203124591",
@@ -244,8 +242,8 @@
     "slug": "steam-deck-oled-512",
     "title": "Steam Deck OLED 512GB",
     "merchant": "Steam",
-    "price_now": 449.0,
-    "price_was": 549.0,
+    "price_now": 449,
+    "price_was": 549,
     "category": "gaming",
     "why": "OLED 512GB decks rarely move off the $549 shelf price. A hundred off is the cut that shows up in the gaming aisle.",
     "url": "https://store.steampowered.com/steamdeck/",
@@ -263,32 +261,24 @@
     "why": "The wireless G502 X has been holding near $140. This used unit is under $90, not a refurbished mystery SKU.",
     "url": "https://www.logitechg.com/en-us/shop/p/g502-x-wireless-lightforce",
     "image": "images/deals/logitech-g502-x-lightspeed.jpg",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-18"
-  },
-  {
-    "slug": "dji-mini-4-pro",
-    "title": "DJI Mini 4 Pro (drone only)",
-    "merchant": "B&H",
-    "price_now": 759.0,
-    "price_was": 959.0,
-    "category": "drones",
-    "why": "Drone-only Mini 4 Pro, no Fly More kit. Street price on the bare aircraft has been closer to $900.",
-    "url": "https://www.bhphotovideo.com/c/product/1784782-REG/dji_cp_ma_00000731_01_mini_4_pro_drone.html",
-    "curated": true,
-    "posted": "2026-09-20"
   },
   {
     "slug": "dji-neo",
     "title": "DJI Neo",
     "merchant": "Adorama",
-    "price_now": 149.0,
-    "price_was": 199.0,
+    "price_now": 149,
+    "price_was": 199,
     "category": "drones",
     "why": "Used Neo, not the Motion Fly More bundle. New ones have been sitting at $199.",
     "url": "https://www.adorama.com/dji-neo-drone-no-remote-4k-camera-base-kit/p/djicpfp18401",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-14"
   },
@@ -349,7 +339,7 @@
     "title": "Sitka Traverse Beanie — Waterfowl Marsh",
     "merchant": "Sportsman's Warehouse",
     "price_now": 18.77,
-    "price_was": 35.0,
+    "price_was": 35,
     "category": "apparel",
     "why": "Traverse beanie in Waterfowl Marsh at $18.77. It was $35 before the markdown.",
     "url": "https://www.sportsmans.com/hunting-headwear/sitka-traverse-beanie-waterfowl-marsh-one-size-fits-most/p/1720459",
@@ -374,8 +364,8 @@
     "slug": "pd-goya-dry-chick-peas-24-pack",
     "title": "24-Pack Goya Dry Chick Peas, 16 oz.",
     "merchant": "Amazon",
-    "price_now": 21.00,
-    "price_was": 32.50,
+    "price_now": 21,
+    "price_was": 32.5,
     "category": "food-storage",
     "why": "A 24-pack of Goya dry chick peas, 16 oz. bags, is $21.00, down from $32.50 (35% off).",
     "url": "https://www.amazon.com/dp/B008BZSSSC",
@@ -440,7 +430,7 @@
     "title": "6-Pack Blistex Medicated Lip Balm ($0.76/Each)",
     "merchant": "Amazon",
     "price_now": 4.58,
-    "price_was": 14.00,
+    "price_was": 14,
     "category": "household",
     "why": "A 6-pack of Blistex medicated lip balm is $4.58 (~$0.76 each), down from $14.00 (67% off).",
     "url": "https://www.amazon.com/dp/B0044B4HSM",
@@ -504,7 +494,7 @@
     "slug": "pd-tomcat-mouse-killer-refillable-station",
     "title": "Tomcat Mouse Killer Refillable Station w/ 16 Baits",
     "merchant": "Amazon",
-    "price_now": 7.60,
+    "price_now": 7.6,
     "price_was": 12.99,
     "category": "household",
     "why": "A Tomcat refillable mouse-killer station with 16 baits is $7.60, down from $12.99 (41% off).",
@@ -518,7 +508,7 @@
     "title": "Navitas Organics Superfood+ Cacao Goji Bites, 16 oz.",
     "merchant": "Amazon",
     "price_now": 10.44,
-    "price_was": 17.70,
+    "price_was": 17.7,
     "category": "food-storage",
     "why": "Navitas Organics Superfood+ cacao goji bites, 16 oz., are $10.44, down from $17.70 (41% off).",
     "url": "https://www.amazon.com/dp/B07CW489ZN",
@@ -701,7 +691,7 @@
     "slug": "pd-sawyer-squeeze-water-filtration",
     "title": "Sawyer Squeeze Water Filtration System w/ 2x Pouches, Straw, & Hydration Pack Adapter",
     "merchant": "Amazon",
-    "price_now": 30.50,
+    "price_now": 30.5,
     "price_was": 45.99,
     "category": "survival",
     "why": "A full Squeeze kit with two pouches, straw, and hydration-pack adapter at $30.50, down from $45.99.",
@@ -749,7 +739,7 @@
     "slug": "pd-true-lemon-water-enhancer-500-pack",
     "title": "500-Pack True Lemon Water Enhancer",
     "merchant": "Amazon",
-    "price_now": 14.00,
+    "price_now": 14,
     "price_was": 21.67,
     "category": "food-storage",
     "why": "A 500-pack of True Lemon packets is $14.00, down from $21.67.",
@@ -939,7 +929,7 @@
     "title": "Geissele Automatics 20\" GFR Stratomatch 22 ARC AR-15 Rifle",
     "merchant": "Primary Arms",
     "price_now": 2656.3,
-    "price_was": 3250.0,
+    "price_was": 3250,
     "category": "guns",
     "why": "Primary Arms shows $2,656.30 in the cart for this 20-inch 22 ARC Stratomatch, down from $3,250.00.",
     "url": "https://www.primaryarms.com/geissele-automatics-freedom-rifle-stratomatch-22-arc-ar-15-rifle-20in-ddc",
@@ -952,7 +942,7 @@
     "title": "Geissele Automatics 2-Stage AK-X Trigger",
     "merchant": "Primary Arms",
     "price_now": 257.72,
-    "price_was": 355.0,
+    "price_was": 355,
     "category": "accessories",
     "why": "Primary Arms shows $257.72 in the cart for the Geissele 2-stage AK-X trigger, down from $355.00.",
     "url": "https://www.primaryarms.com/geissele-automatics-2-stage-ak-trigger",
@@ -982,7 +972,10 @@
     "why": "Police trade-in full-size P320 with night sights and one 17-round magazine. AIM Surplus lists it at $299.95, down from $399.95. Finish wear on the slide and grip; the grip module that ships is random.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-sig-sauer-p320-full-size-9mm-handgun",
     "image": "images/deals/aim-leo-sig-p320-full-size-9mm.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -996,7 +989,10 @@
     "why": "Carry-size police trade-in with Sig's slide-mounted Romeo red dot. $399.95, down from $499.95. Expect duty wear, and not every optic includes the shroud.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-sig-sauer-p320-rxp-carry-9mm-handgun-black",
     "image": "images/deals/aim-leo-sig-p320-rxp-carry-romeo.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1005,7 +1001,7 @@
     "title": "Trijicon RMR Type 2 RM06 3.25 MOA",
     "merchant": "AIM Surplus",
     "price_now": 479.95,
-    "price_was": 779.0,
+    "price_was": 779,
     "category": "optics",
     "why": "Adjustable-LED Trijicon RMR Type 2 (RM06, 3.25 MOA) on sale at $479.95, down from $779.",
     "url": "https://www.aimsurplus.com/products/trijicon-rm06-c-700672-3-25-adj-red-rmr-type-2",
@@ -1023,7 +1019,9 @@
     "why": "Law-enforcement trade-in Speer Gold Dot, 180-grain hollow point, 50 rounds. $19.95, down from $29.95. The boxes show wear; the ammunition is unfired.",
     "url": "https://www.aimsurplus.com/products/speer-gold-dot-40-sw-180grn-gdhp-50rd-box",
     "image": "images/deals/aim-speer-gold-dot-40-50.jpg",
-    "tags": ["police-trade-in"],
+    "tags": [
+      "police-trade-in"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1037,7 +1035,10 @@
     "why": "Used factory Glock 22 15-round .40 magazines with a metal liner. $9.95, down from $13.95. Generations and markings vary.",
     "url": "https://www.aimsurplus.com/products/glock-model-22-15rd-40cal-magazine-used-leo",
     "image": "images/deals/aim-leo-glock-22-15rd-magazine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1155,7 +1156,10 @@
     "why": "Used factory HK USP full-size .40 13-round magazines from law-enforcement trade-ins. $19.95, down from $24.95. They fit the full-size USP40, not the compact or P2000.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-hk-usp40-13rd-40sw-magazine-black",
     "image": "images/deals/aim-leo-hk-usp40-13rd-magazine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1234,7 +1238,10 @@
     "why": "Used law-enforcement trade-in Sig P320 9mm 17-round magazines. $19.95, down from $24.95. Finish wear is typical, and some have the older wide floorplate wings.",
     "url": "https://www.aimsurplus.com/products/used-sig-sauer-p320-9mm-17rd-magazine",
     "image": "images/deals/aim-leo-sig-p320-17rd-magazine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1255,7 +1262,7 @@
     "slug": "jg-8mm-mauser-german-wwii-300",
     "title": "8mm Mauser German WWII 178gr FMJ Surplus Ammo, SmK Steel Core, 300rd Sleeve",
     "merchant": "J&G Sales",
-    "price_now": 99.90,
+    "price_now": 99.9,
     "price_was": 149.85,
     "category": "ammo",
     "why": "World War II German 8mm Mauser surplus, 178-grain SmK steel-core FMJ, in a 300-round sleeve. J&G Sales lists it at $99.90, down from $149.85. Lacquered steel cases and a corrosive primer.",
@@ -1441,7 +1448,7 @@
     "slug": "botach-federal-power-shok-30-30-170-20",
     "title": "Federal Power-Shok .30-30 Winchester 170gr JSP — 20 rounds",
     "merchant": "Botach",
-    "price_now": 21.20,
+    "price_now": 21.2,
     "price_was": 32.95,
     "category": "ammo",
     "why": "Federal Power-Shok .30-30 Winchester 170-grain jacketed soft point, 20 rounds. $21.20, down from $32.95, $1.06 a round.",
@@ -1601,7 +1608,7 @@
     "slug": "skili-gear-mag-pouch-9mm",
     "title": "Skili Gear Mag Pouch — Coyote 9mm",
     "merchant": "Tactical Distributors",
-    "price_now": 28.50,
+    "price_now": 28.5,
     "price_was": 38,
     "category": "nylon",
     "why": "Coyote pistol mag pouch in 9mm at $28.50, down from $38. The 5.56 and 7.62 versions on the same page are different prices.",
@@ -1672,7 +1679,10 @@
     "why": "Police trade-in M&P40 with no thumb safety. AIM Surplus lists it at $239.95. Expect duty wear; magazines and night sights vary by unit.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-smith-wesson-mp40-40-sw-handgun-no-thumb-safety",
     "image": "images/deals/aim-leo-mp40-no-thumb.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1686,7 +1696,10 @@
     "why": "Police trade-in Gen4 Glock 22 in .40 S&W. AIM Surplus lists it at $299.95. Finish wear is normal; confirm magazine count on the product page.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-glock-22-gen-4-40sw-handgun",
     "image": "images/deals/aim-leo-glock-22-gen4.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1700,7 +1713,10 @@
     "why": "Police trade-in Gen4 Glock 17. AIM Surplus lists it at $369.95, down from $399.95. Expect holster wear; magazine count varies.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-glock-17-gen-4-9mm-handgun-black",
     "image": "images/deals/aim-leo-glock-17-gen4.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1714,7 +1730,10 @@
     "why": "Police trade-in Gen5 Glock 17. AIM Surplus lists it at $399.95. Newer Gen5 frame and marks; duty wear expected.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-glock-17-gen-5-9mm-handgun",
     "image": "images/deals/aim-leo-glock-17-gen5.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1728,7 +1747,10 @@
     "why": "Carry-size police trade-in P320 (non-Romeo listing). AIM Surplus lists it at $349.95. Distinct from the RXP/Romeo SKU already on the board.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-sig-sauer-p320-rxp-carry-9mm-handgun",
     "image": "images/deals/aim-leo-p320-carry.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1742,7 +1764,10 @@
     "why": "Older police trade-in S&W 910 9mm. AIM Surplus lists it at $349.95. Traditional DA/SA duty pistol with expected wear.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-smith-wesson-910-9mm-handgun",
     "image": "images/deals/aim-leo-sw-910.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1756,7 +1781,10 @@
     "why": "Police trade-in Colt EPR complete upper (14.5in .223/5.56). AIM Surplus lists it at $599.95. Used LE gear; verify barrel/muzzle state on the listing.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-colt-epr-145in-223556-ar15-upper-receiver",
     "image": "images/deals/aim-leo-colt-epr-upper.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1770,7 +1798,9 @@
     "why": "Surplus Polish P-83 Wanad in 9x18 Makarov with two magazines. AIM Surplus lists it at $379.95.",
     "url": "https://www.aimsurplus.com/products/polish-p-83-wanad-9x18-pistol-w-two-magazines",
     "image": "images/deals/aim-polish-p83-wanad.jpg",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1784,7 +1814,10 @@
     "why": "LEO Trade-In Glock Model 23 13rd .40cal Magazine. AIM Surplus lists it at $13.95.",
     "url": "https://www.aimsurplus.com/products/glock-model-23-13rd-40cal-magazine-used-leo",
     "image": "images/deals/aim-leo-glock-23-13rd-magazine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1798,7 +1831,10 @@
     "why": "LEO Trade-In Glock 17 9mm 17rd Magazine- Black. AIM Surplus lists it at $14.95.",
     "url": "https://www.aimsurplus.com/products/glock-model-17-17rd-9mm-factory-magazine-used",
     "image": "images/deals/aim-leo-glock-17-17rd-magazine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1812,7 +1848,10 @@
     "why": "LEO Trade-In Glock 21 13rd .45ACP Magazine. AIM Surplus lists it at $14.95.",
     "url": "https://www.aimsurplus.com/products/glock-model-21-13rd-45-auto-magazine-used-leo",
     "image": "images/deals/aim-leo-glock-21-13rd-magazine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1826,7 +1865,9 @@
     "why": "Used SIG SAUER P226 12rd .40S&W/.357 SIG Magazine. AIM Surplus lists it at $14.95.",
     "url": "https://www.aimsurplus.com/products/used-sig-sauer-p226-12rd-40cal-magazine",
     "image": "images/deals/aim-used-sig-p226-12rd-magazine.jpg",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1840,7 +1881,9 @@
     "why": "LE Trade-in Federal 12GA 2-3/4in 00 Buck Flight Control Ammunition- 5rd Box. AIM Surplus lists it at $5.95.",
     "url": "https://www.aimsurplus.com/products/le-trade-in-federal-12ga-2-3-4in-00-buck-flight-control-ammunition-5rd-box",
     "image": "images/deals/aim-leo-federal-00-buck-flight-control.jpg",
-    "tags": ["police-trade-in"],
+    "tags": [
+      "police-trade-in"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1854,7 +1897,9 @@
     "why": "LEO Trade-in Federal 12GA 2-3/4in 00 Buck 9 Pellet Ammunition- 5rd Box. AIM Surplus lists it at $7.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-federal-12ga-2-34in-00-buck-9-pellet-flight-control-ammunition-5rd-box",
     "image": "images/deals/aim-leo-federal-00-buck-9-pellet.jpg",
-    "tags": ["police-trade-in"],
+    "tags": [
+      "police-trade-in"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1868,7 +1913,10 @@
     "why": "LEO Trade-In Glock 22 Gen 3 .40S&W Handgun. AIM Surplus lists it at $299.95, down from $319.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-glock-22-gen-3-40sw-handgun",
     "image": "images/deals/aim-leo-glock-22-gen3.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1882,7 +1930,10 @@
     "why": "LEO Trade-In GLOCK 22 GEN 4 .40S&W Handgun w/ Stippled Frame. AIM Surplus lists it at $399.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-glock-22-gen-4-40sw-handgun-w-stippled-frame",
     "image": "images/deals/aim-leo-glock-22-gen4-stippled.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1896,7 +1947,10 @@
     "why": "LEO Trade-In GLOCK 17 GEN 3 9mm Handgun. AIM Surplus lists it at $399.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-glock-17-gen-3-9mm-handgun_2",
     "image": "images/deals/aim-leo-glock-17-gen3.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-23"
   },
@@ -1905,7 +1959,7 @@
     "title": "DURAMAG 9mm Colt-Style Stainless 32rd Magazine",
     "merchant": "AIM Surplus",
     "price_now": 20.95,
-    "price_was": 33.50,
+    "price_was": 33.5,
     "category": "accessories",
     "why": "Stainless DURAMAG 9mm Colt-pattern 32-round magazine at $20.95, down from $33.50 MSRP.",
     "url": "https://www.aimsurplus.com/products/duramag-9mm-colt-style-stainless-steel-32rd-magazine",
@@ -1944,7 +1998,7 @@
     "title": "Spike's Tactical Multi-Cal Punisher AR Receiver",
     "merchant": "AIM Surplus",
     "price_now": 84.95,
-    "price_was": 107.10,
+    "price_was": 107.1,
     "category": "guns",
     "why": "Spike's Tactical multi-cal Punisher AR lower/receiver on sale at $84.95, down from $107.10.",
     "url": "https://www.aimsurplus.com/products/spikes-tactical-multi-cal-punisher-ar-receiver",
@@ -1975,7 +2029,10 @@
     "why": "Used LEO Sig P320/P250 Compact .45 ACP 9-round magazine at $16.95, down from $19.95.",
     "url": "https://www.aimsurplus.com/products/used-leo-sig-sauer-p320p250-compact-45-auto-9rd-magazine",
     "image": "images/deals/aim-leo-sig-p320-p250-compact-45-9rd.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-24"
   },
@@ -1989,7 +2046,10 @@
     "why": "Police trade-in DMPS A-15 16in .223/5.56 carbine with detachable carry handle. $419.95, down from $499.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-dmps-a-15-carbine-16in-223556-ar15-rifle",
     "image": "images/deals/aim-leo-dmps-a15-carbine.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-24"
   },
@@ -2003,7 +2063,10 @@
     "why": "LEO trade-in P320 full-size 9mm slide shipping with a random grip module. $199.95, down from $249.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-sig-sauer-p320-full-size-9mm-slide-w-grip-module",
     "image": "images/deals/aim-leo-sig-p320-full-size-slide-grip.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-24"
   },
@@ -2017,7 +2080,10 @@
     "why": "Right-hand Gould & Goodrich PYB-228CL duty holster for Sig P228/229. LEO trade-in at $14.95, down from $99.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-gould-and-goodrich-model-pyb-228cl-for-sig-p228229-right-handed",
     "image": "images/deals/aim-leo-gould-pyb-228cl-holster.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-24"
   },
@@ -2031,7 +2097,10 @@
     "why": "LEO trade-in Sig P229 DAK grip panels at $9.95, down from $19.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-sig-p229-grip-panels",
     "image": "images/deals/aim-leo-sig-p229-dak-grip-panels.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-24"
   },
@@ -2040,12 +2109,14 @@
     "title": "MSA CBRN Gas Mask Filter — LEO trade-in",
     "merchant": "AIM Surplus",
     "price_now": 19.95,
-    "price_was": 111.00,
+    "price_was": 111,
     "category": "survival",
     "why": "Police trade-in MSA CBRN canisters at $19.95, down from $111 MSRP. AIM notes most have expired dates but are still sealed. Compatible with MSA Advantage 200 LS, 420, 1000, 3000, and 4000 series — confirm on the product page. Not a claim of current certification.",
     "url": "https://www.aimsurplus.com/products/msa-cbrn-canister-gas-mask-filter",
     "image": "images/deals/aim-msa-cbrn-gas-mask-filter.png",
-    "tags": ["police-trade-in"],
+    "tags": [
+      "police-trade-in"
+    ],
     "curated": false,
     "posted": "2026-09-25"
   },
@@ -2059,7 +2130,9 @@
     "why": "Used Magpul RVG rail vertical grip at $14.95, down from $24.95 MSRP (about 40% off). Condition is used.",
     "url": "https://www.aimsurplus.com/products/used-magpul-rvg-rail-vertical-grip-black",
     "image": "images/deals/aim-used-magpul-rvg-rail-vertical-grip.jpg",
-    "tags": ["used"],
+    "tags": [
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-25"
   },
@@ -2073,7 +2146,10 @@
     "why": "Expired soft-armor panels sold strictly as range targets and training aids, not for personal protection. $39.95, down from $69.95.",
     "url": "https://www.aimsurplus.com/products/leo-trade-in-soft-armor-range-target",
     "image": "images/deals/aim-leo-soft-armor-range-target.jpg",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-25"
   },
@@ -2087,7 +2163,10 @@
     "why": "Used law-enforcement Watchguard Vista body camera at $89.95, down from $139.95. Police trade-in sold as-is; verify accessories and function on the product page.",
     "url": "https://www.aimsurplus.com/products/watchguard-vista-bodycam-used",
     "image": "images/deals/aim-watchguard-vista-bodycam-used.png",
-    "tags": ["police-trade-in", "used"],
+    "tags": [
+      "police-trade-in",
+      "used"
+    ],
     "curated": false,
     "posted": "2026-09-25"
   }
