@@ -141,15 +141,16 @@ test("H-4 watch timers stay disabled and live mode is per job", () => {
     envFile,
     [
       "BLACKOUT_WINDOWS=daily 00:00-06:00",
-      "ONCALENDAR_WATCH=daily 12:00",
-      "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
-      "ONCALENDAR_PREPPINGDEALS=daily 12:00",
-      "ONCALENDAR_AIM=daily 12:00",
-      "ONCALENDAR_EXPIRY=daily 12:00",
+      "ONCALENDAR_WATCH=*-*-* 12:00:00",
+      "ONCALENDAR_WATCH_PROMOTE=*-*-* 12:00:00",
+      "ONCALENDAR_PREPPINGDEALS=*-*-* 12:00:00",
+      "ONCALENDAR_AIM=*-*-* 12:00:00",
+      "ONCALENDAR_EXPIRY=*-*-* 12:00:00",
       "DRIVE_UPLOADER=node",
-      "CRED_GH=/tmp/stash-cred-gh",
-      "CRED_GMAIL=/tmp/stash-cred-gmail",
-      "CRED_DRIVE=/tmp/stash-cred-drive",
+      "CRED_DIR=/tmp/stash-creds",
+      "CRED_GH=/tmp/stash-creds/gh",
+      "CRED_GMAIL=/tmp/stash-creds/gmail",
+      "CRED_DRIVE=/tmp/stash-creds/drive",
       "NODE=/usr/bin/node",
       "CHECKOUT=/tmp/checkout",
     ].join("\n"),
@@ -329,15 +330,16 @@ test("L-5 installer uses bash, a private data git, and credential file modes", (
     idEnv,
     [
       "BLACKOUT_WINDOWS=daily 00:00-06:00",
-      "ONCALENDAR_WATCH=daily 12:00",
-      "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
-      "ONCALENDAR_PREPPINGDEALS=daily 12:00",
-      "ONCALENDAR_AIM=daily 12:00",
-      "ONCALENDAR_EXPIRY=daily 12:00",
+      "ONCALENDAR_WATCH=*-*-* 12:00:00",
+      "ONCALENDAR_WATCH_PROMOTE=*-*-* 12:00:00",
+      "ONCALENDAR_PREPPINGDEALS=*-*-* 12:00:00",
+      "ONCALENDAR_AIM=*-*-* 12:00:00",
+      "ONCALENDAR_EXPIRY=*-*-* 12:00:00",
       "DRIVE_UPLOADER=node",
-      "CRED_GH=/tmp/stash-cred-gh",
-      "CRED_GMAIL=/tmp/stash-cred-gmail",
-      "CRED_DRIVE=/tmp/stash-cred-drive",
+      "CRED_DIR=/tmp/stash-creds",
+      "CRED_GH=/tmp/stash-creds/gh",
+      "CRED_GMAIL=/tmp/stash-creds/gmail",
+      "CRED_DRIVE=/tmp/stash-creds/drive",
       "NODE=/usr/bin/node",
       "CHECKOUT=/tmp/checkout",
     ].join("\n"),
@@ -543,22 +545,22 @@ function checkInstall(lines) {
 }
 
 const quietCalendars = [
-  "ONCALENDAR_WATCH=daily 12:00",
-  "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
-  "ONCALENDAR_PREPPINGDEALS=daily 12:00",
-  "ONCALENDAR_AIM=daily 12:00",
-  "ONCALENDAR_EXPIRY=daily 12:00",
+  "ONCALENDAR_WATCH=*-*-* 12:00:00",
+  "ONCALENDAR_WATCH_PROMOTE=*-*-* 12:00:00",
+  "ONCALENDAR_PREPPINGDEALS=*-*-* 12:00:00",
+  "ONCALENDAR_AIM=*-*-* 12:00:00",
+  "ONCALENDAR_EXPIRY=*-*-* 12:00:00",
   "DRIVE_UPLOADER=node",
 ];
 
 test("RM-4 blackout, live job, enable-watch, and unit values", () => {
-  const clock = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", "ONCALENDAR_WATCH=daily 18:50", ...quietCalendars.slice(1)]);
+  const clock = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", "ONCALENDAR_WATCH=*-*-* 18:50:00", ...quietCalendars.slice(1)]);
   assert.equal(clock.status, 1, clock.stdout + clock.stderr);
   assert.match(clock.stderr, /blackout overlap/);
-  const seconds = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", "ONCALENDAR_WATCH=daily 18:50:00", ...quietCalendars.slice(1)]);
+  const seconds = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", "ONCALENDAR_WATCH=*-*-* 18:50:00", ...quietCalendars.slice(1)]);
   assert.equal(seconds.status, 1, seconds.stdout + seconds.stderr);
   assert.match(seconds.stderr, /blackout overlap/);
-  const span = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", "ONCALENDAR_WATCH=daily 18:30", ...quietCalendars.slice(1)]);
+  const span = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", "ONCALENDAR_WATCH=*-*-* 18:30:00", ...quietCalendars.slice(1)]);
   assert.equal(span.status, 1, span.stdout + span.stderr);
   const clear = checkInstall(["BLACKOUT_WINDOWS=daily 18:45-19:05", ...quietCalendars]);
   assert.equal(clear.status, 0, clear.stdout + clear.stderr);
@@ -579,7 +581,7 @@ test("RM-4 blackout, live job, enable-watch, and unit values", () => {
   );
   fs.writeFileSync(
     path.join(bin, "systemd-analyze"),
-    "#!/bin/bash\nif [ -n \"${STASH_FAIL_VERIFY:-}\" ]; then exit 1; fi\nexit 0\n",
+    "#!/bin/bash\nif [ \"$1\" = \"calendar\" ]; then exit 0; fi\nif [ -n \"${STASH_FAIL_VERIFY:-}\" ]; then exit 1; fi\nexit 0\n",
   );
   for (const name of ["npm", "systemctl", "systemd-analyze"]) fs.chmodSync(path.join(bin, name), 0o755);
   const envFile = path.join(home, "stash.env");
@@ -589,9 +591,10 @@ test("RM-4 blackout, live job, enable-watch, and unit values", () => {
     [
       "BLACKOUT_WINDOWS=daily 00:00-06:00",
       ...quietCalendars,
-      "CRED_GH=/tmp/stash-cred-gh",
-      "CRED_GMAIL=/tmp/stash-cred-gmail",
-      "CRED_DRIVE=/tmp/stash-cred-drive",
+      "CRED_DIR=/tmp/stash-creds",
+      "CRED_GH=/tmp/stash-creds/gh",
+      "CRED_GMAIL=/tmp/stash-creds/gmail",
+      "CRED_DRIVE=/tmp/stash-creds/drive",
       "NODE=/usr/bin/node",
       "CHECKOUT=/tmp/checkout",
       `DATA_GIT=${dataGit}`,
@@ -659,7 +662,7 @@ test("RM-4 blackout, live job, enable-watch, and unit values", () => {
   assert.equal(badValue({ NODE: "node" }).status, 2);
   assert.equal(badValue({ CHECKOUT: "/tmp/my checkout" }).status, 2);
   const injected = path.join(home, "injected.env");
-  fs.writeFileSync(injected, fs.readFileSync(envFile, "utf8").replace("ONCALENDAR_WATCH=daily 12:00", "ONCALENDAR_WATCH=daily 12:00%h"));
+  fs.writeFileSync(injected, fs.readFileSync(envFile, "utf8").replace("ONCALENDAR_WATCH=*-*-* 12:00:00", "ONCALENDAR_WATCH=*-*-* 12:00:00%h"));
   const percent = spawnSync("bash", [path.join(repoRoot, "ops/runner/install.sh"), "--check"], {
     env: { ...process.env, STASH_ENV: injected, STASH_RENDER_DIR: render },
     encoding: "utf8",
@@ -712,7 +715,7 @@ test("blackout windows fail closed", () => {
   assert.equal(saturday.status, 0, saturday.stdout + saturday.stderr);
   const wednesday = checkInstall(["BLACKOUT_WINDOWS=Wed 12:00-13:00", ...weekdayCalendars]);
   assert.equal(wednesday.status, 1, wednesday.stdout + wednesday.stderr);
-  const badClock = checkInstall(["BLACKOUT_WINDOWS=daily 00:00-06:00", "ONCALENDAR_WATCH=daily 99:99", ...quietCalendars.slice(1)]);
+  const badClock = checkInstall(["BLACKOUT_WINDOWS=daily 00:00-06:00", "ONCALENDAR_WATCH=*-*-* 99:99", ...quietCalendars.slice(1)]);
   assert.equal(badClock.status, 2, badClock.stdout + badClock.stderr);
 });
 
@@ -722,16 +725,17 @@ test("two-run watch and preppingdeals calendars render and stay outside the blac
     "BLACKOUT_WINDOWS=daily 00:00-06:00",
     "ONCALENDAR_WATCH=Mon..Fri *-*-* 08:59:00",
     "ONCALENDAR_WATCH_2=Mon..Fri *-*-* 16:59:00",
-    "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
-    "ONCALENDAR_PREPPINGDEALS=daily *-*-* 08:07:00",
-    "ONCALENDAR_PREPPINGDEALS_2=daily *-*-* 18:07:00",
-    "ONCALENDAR_AIM=daily 12:00",
-    "ONCALENDAR_EXPIRY=daily 12:00",
-    "ONCALENDAR_EXPIRY_3=daily 21:00:00",
+    "ONCALENDAR_WATCH_PROMOTE=*-*-* 12:00:00",
+    "ONCALENDAR_PREPPINGDEALS=*-*-* 08:07:00",
+    "ONCALENDAR_PREPPINGDEALS_2=*-*-* 18:07:00",
+    "ONCALENDAR_AIM=*-*-* 12:00:00",
+    "ONCALENDAR_EXPIRY=*-*-* 12:00:00",
+    "ONCALENDAR_EXPIRY_3=*-*-* 21:00:00",
     "DRIVE_UPLOADER=node",
-    "CRED_GH=/tmp/stash-cred-gh",
-    "CRED_GMAIL=/tmp/stash-cred-gmail",
-    "CRED_DRIVE=/tmp/stash-cred-drive",
+    "CRED_DIR=/tmp/stash-creds",
+    "CRED_GH=/tmp/stash-creds/gh",
+    "CRED_GMAIL=/tmp/stash-creds/gmail",
+    "CRED_DRIVE=/tmp/stash-creds/drive",
     "NODE=/usr/bin/node",
     "CHECKOUT=/tmp/checkout",
   ];
@@ -748,37 +752,40 @@ test("two-run watch and preppingdeals calendars render and stay outside the blac
     "OnCalendar=Mon..Fri *-*-* 16:59:00",
   ]);
   assert.deepEqual(calendars("stash-deals-preppingdeals.timer"), [
-    "OnCalendar=daily *-*-* 08:07:00",
-    "OnCalendar=daily *-*-* 18:07:00",
+    "OnCalendar=*-*-* 08:07:00",
+    "OnCalendar=*-*-* 18:07:00",
   ]);
   assert.deepEqual(calendars("stash-deals-expiry.timer"), [
-    "OnCalendar=daily 12:00",
-    "OnCalendar=daily 21:00:00",
+    "OnCalendar=*-*-* 12:00:00",
+    "OnCalendar=*-*-* 21:00:00",
   ]);
   const early = checkInstall([
     "BLACKOUT_WINDOWS=daily 00:00-06:00",
     "ONCALENDAR_WATCH=Mon..Fri *-*-* 08:59:00",
-    "ONCALENDAR_WATCH_2=daily 05:50:00",
+    "ONCALENDAR_WATCH_2=*-*-* 05:50:00",
     ...quietCalendars.slice(1),
   ]);
   assert.equal(early.status, 1, early.stdout + early.stderr);
   assert.match(early.stderr, /blackout overlap: ONCALENDAR_WATCH_2/);
   const example = fs.readFileSync(path.join(repoRoot, "ops/runner/stash.env.example"), "utf8");
-  for (const key of ["ONCALENDAR_WATCH_2", "ONCALENDAR_WATCH_PROMOTE_2", "ONCALENDAR_PREPPINGDEALS_2", "ONCALENDAR_AIM_2", "ONCALENDAR_EXPIRY_2"]) {
+  for (const key of ["ONCALENDAR_WATCH_2", "ONCALENDAR_WATCH_PROMOTE_2", "ONCALENDAR_WATCH_PROMOTE_3", "ONCALENDAR_PREPPINGDEALS_2", "ONCALENDAR_AIM_2", "ONCALENDAR_EXPIRY_2"]) {
     assert.match(example, new RegExp(`^${key}=<calendar>$`, "m"));
   }
 });
 
 test("publish paths match the shared bot path module", () => {
   const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
-  assert.match(yaml, /node pipeline\/src\/bot-paths\.js "\$file"/);
-  assert.equal(yaml.includes("public/images/deals/[a-z0-9]"), false);
+  const script = yaml.split("# bot-paths-begin")[1].split("# bot-paths-end")[0];
+  assert.equal(script.includes("node pipeline/src/bot-paths.js"), false);
+  assert.match(script, /git show "\$BASE_SHA:pipeline\/src\/bot-paths\.js" > "\$\{RUNNER_TEMP:\?\}\/bot-paths\.mjs"/);
+  assert.match(script, /65dcbe0a9b6d9dfd5f0bb55d0373a6b59cd01435/);
   const probe = (file) => spawnSync(process.execPath, [path.join(repoRoot, "pipeline/src/bot-paths.js"), file], { encoding: "utf8" });
   assert.equal(probe("data/deals.json").status, 0);
   assert.equal(probe("data/expired/deals.json").status, 0);
   assert.equal(probe("public/images/deals/aim-widget.jpg").status, 0);
   assert.equal(probe("data/deals-extra.json").status, 1);
   assert.equal(probe("public/images/deals/nested/card.webp").status, 1);
+  assert.equal(probe("pipeline/src/bot-paths.js").status, 1);
 });
 
 test("watch promote does not mint when accepted picks produce no candidates", async () => {
@@ -818,14 +825,15 @@ test("install paths use an allowlist", () => {
   const script = fs.readFileSync(path.join(repoRoot, "ops/runner/install.sh"), "utf8");
   const fn = script.split("assert_abs_path()")[1].split("assert_calendar()")[0];
   assert.match(fn, /\^\/\[A-Za-z0-9\._\/-\]\+\$/);
-  assert.equal(fn.includes("*..*"), false);
+  assert.match(fn, /\*'\/\.\.\/'\*\|\*'\/\.\/'\*\|\*'\/\/'\*/);
   const render = fs.mkdtempSync(path.join(os.tmpdir(), "path-allow-"));
   const base = [
     "BLACKOUT_WINDOWS=daily 00:00-06:00",
     ...quietCalendars,
-    "CRED_GH=/tmp/stash-cred-gh",
-    "CRED_GMAIL=/tmp/stash-cred-gmail",
-    "CRED_DRIVE=/tmp/stash-cred-drive",
+    "CRED_DIR=/tmp/stash-creds",
+    "CRED_GH=/tmp/stash-creds/gh",
+    "CRED_GMAIL=/tmp/stash-creds/gmail",
+    "CRED_DRIVE=/tmp/stash-creds/drive",
     "NODE=/usr/bin/node",
   ];
   const run = (checkout) => {
@@ -836,8 +844,91 @@ test("install paths use an allowlist", () => {
       encoding: "utf8",
     });
   };
+  const plain = run("/tmp/checkout");
+  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
   const dotted = run("/tmp/../checkout");
-  assert.equal(dotted.status, 0, dotted.stdout + dotted.stderr);
+  assert.equal(dotted.status, 2, dotted.stdout + dotted.stderr);
+  const dot = run("/tmp/./checkout");
+  assert.equal(dot.status, 2, dot.stdout + dot.stderr);
+  const doubleslash = run("/tmp//checkout");
+  assert.equal(doubleslash.status, 2, doubleslash.stdout + doubleslash.stderr);
   const metachar = run("/tmp/checkout;id");
   assert.equal(metachar.status, 2, metachar.stdout + metachar.stderr);
+});
+
+test("calendars systemd rejects are refused", () => {
+  const script = fs.readFileSync(path.join(repoRoot, "ops/runner/install.sh"), "utf8");
+  assert.match(script, /systemd-analyze --user verify "\$unit_home"\/stash-deals-\*\.service "\$unit_home"\/stash-deals-\*\.timer/);
+  for (const bad of ["daily 12:00", "daily *-*-* 08:07:00", "*-*-* *-*-* 12:00", "Fri..Mon 12:00"]) {
+    const result = checkInstall(["BLACKOUT_WINDOWS=daily 00:00-06:00", `ONCALENDAR_WATCH=${bad}`, ...quietCalendars.slice(1)]);
+    assert.equal(result.status, 2, `${bad}\n${result.stdout}${result.stderr}`);
+  }
+  const fourth = checkInstall(["BLACKOUT_WINDOWS=daily 00:00-06:00", "ONCALENDAR_WATCH_4=*-*-* 11:00:00", ...quietCalendars]);
+  assert.equal(fourth.status, 2, fourth.stdout + fourth.stderr);
+  assert.match(fourth.stderr, /unknown calendar ONCALENDAR_WATCH_4/);
+  const orphan = checkInstall([
+    "BLACKOUT_WINDOWS=daily 00:00-06:00",
+    "ONCALENDAR_WATCH_2=*-*-* 16:59:00",
+    ...quietCalendars.slice(1),
+  ]);
+  assert.equal(orphan.status, 2, orphan.stdout + orphan.stderr);
+  assert.match(orphan.stderr, /needs a base/);
+});
+
+test("blackout windows reject newlines and impossible clocks", () => {
+  const envFile = path.join(os.tmpdir(), `blackout-nl-${process.pid}.env`);
+  fs.writeFileSync(envFile, quietCalendars.join("\n"));
+  const spawn = (windows) => spawnSync("bash", [path.join(repoRoot, "ops/runner/install.sh"), "--check"], {
+    env: { ...process.env, STASH_ENV: envFile, BLACKOUT_WINDOWS: windows },
+    encoding: "utf8",
+  });
+  const newline = spawn("daily 00:00-06:00\nMon 12:00-13:00");
+  assert.equal(newline.status, 2, newline.stdout + newline.stderr);
+  const cr = spawn("daily 00:00-06:00\r");
+  assert.equal(cr.status, 2, cr.stdout + cr.stderr);
+  const hour = checkInstall(["BLACKOUT_WINDOWS=daily 25:00-26:00"]);
+  assert.equal(hour.status, 2, hour.stdout + hour.stderr);
+  const minute = checkInstall(["BLACKOUT_WINDOWS=daily 18:61-19:00"]);
+  assert.equal(minute.status, 2, minute.stdout + minute.stderr);
+});
+
+test("credential paths stay inside CRED_DIR", () => {
+  const render = fs.mkdtempSync(path.join(os.tmpdir(), "cred-confine-"));
+  const envFile = path.join(os.tmpdir(), `cred-confine-${process.pid}.env`);
+  fs.writeFileSync(envFile, [
+    "BLACKOUT_WINDOWS=daily 00:00-06:00",
+    ...quietCalendars,
+    "CRED_DIR=/tmp/stash-creds",
+    "CRED_GH=/etc/passwd",
+    "CRED_GMAIL=/tmp/stash-creds/gmail",
+    "CRED_DRIVE=/tmp/stash-creds/drive",
+    "NODE=/usr/bin/node",
+    "CHECKOUT=/tmp/checkout",
+  ].join("\n"));
+  const outside = spawnSync("bash", [path.join(repoRoot, "ops/runner/install.sh"), "--check"], {
+    env: { ...process.env, STASH_ENV: envFile, STASH_RENDER_DIR: render },
+    encoding: "utf8",
+  });
+  assert.equal(outside.status, 2, outside.stdout + outside.stderr);
+  assert.match(outside.stderr, /outside CRED_DIR/);
+});
+
+test("jobs do not publish deals-extra or nested image paths", async () => {
+  const dir = path.join(repoRoot, "pipeline/src/jobs");
+  for (const name of fs.readdirSync(dir)) {
+    if (!name.endsWith(".js")) continue;
+    const text = fs.readFileSync(path.join(dir, name), "utf8");
+    assert.equal(text.includes("data/deals-"), false, name);
+    assert.equal(/public\/images\/deals\/[^"'`\s]+\/[^"'`\s]+/.test(text), false, name);
+  }
+  const calls = [];
+  for (const bad of ["data/deals-watch.json", "data/deals-extra.json", "public/images/deals/nested/card.jpg"]) {
+    assert.equal(allowedCommitPath(bad), false, bad);
+    await assert.rejects(() => publishPullRequest({
+      ...publishBase,
+      files: [{ path: bad, content: "[]" }],
+      fetchImpl: githubFake(calls),
+    }));
+  }
+  assert.equal(calls.length, 0);
 });

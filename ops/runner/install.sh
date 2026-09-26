@@ -155,35 +155,48 @@ days_overlap() {
 
 parse_calendar() {
   local value=$1 rest clock
-  clock=${value##* }
-  rest=${value% *}
+  case "$value" in
+    *' '*)
+      clock=${value##* }
+      rest=${value% *}
+      ;;
+    *)
+      clock=$value
+      rest=daily
+      ;;
+  esac
   case "$rest" in
     *' *-*-*') rest=${rest%' *-*-*'} ;;
   esac
   case "$rest" in
-    '*-*-*') rest=daily ;;
+    '*-*-*'|"") rest=daily ;;
   esac
   PARSED_DAY=$rest
   PARSED_CLOCK=$clock
 }
 
 require_blackouts() {
-  local window count=0 old_ifs
+  local window count=0 old_ifs span window_re
+  window_re='^(daily|Mon|Tue|Wed|Thu|Fri|Sat|Sun) [0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$'
   if [ -z "${BLACKOUT_WINDOWS:-}" ]; then
     echo "blackout windows required" >&2
     exit 2
   fi
+  assert_plain BLACKOUT_WINDOWS "$BLACKOUT_WINDOWS"
   old_ifs=$IFS
   IFS=';'
   set -f
   for window in $BLACKOUT_WINDOWS; do
     count=$((count + 1))
-    printf '%s\n' "$window" | grep -Eq '^(daily|Mon|Tue|Wed|Thu|Fri|Sat|Sun) [0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$' || {
+    if ! [[ "$window" =~ $window_re ]]; then
       set +f
       IFS=$old_ifs
       echo "bad blackout window" >&2
       exit 2
-    }
+    fi
+    span=${window##* }
+    to_seconds "${span%%-*}" >/dev/null || exit 2
+    to_seconds "${span##*-}" >/dev/null || exit 2
   done
   set +f
   IFS=$old_ifs
@@ -193,9 +206,28 @@ require_blackouts() {
   fi
 }
 
+reject_unknown_calendars() {
+  local name
+  while IFS= read -r name; do
+    case "$name" in
+      ONCALENDAR_WATCH|ONCALENDAR_WATCH_2|ONCALENDAR_WATCH_3|\
+      ONCALENDAR_WATCH_PROMOTE|ONCALENDAR_WATCH_PROMOTE_2|ONCALENDAR_WATCH_PROMOTE_3|\
+      ONCALENDAR_PREPPINGDEALS|ONCALENDAR_PREPPINGDEALS_2|ONCALENDAR_PREPPINGDEALS_3|\
+      ONCALENDAR_AIM|ONCALENDAR_AIM_2|ONCALENDAR_AIM_3|\
+      ONCALENDAR_EXPIRY|ONCALENDAR_EXPIRY_2|ONCALENDAR_EXPIRY_3)
+        ;;
+      ONCALENDAR_*)
+        echo "unknown calendar $name" >&2
+        exit 2
+        ;;
+    esac
+  done < <(compgen -v ONCALENDAR_ || true)
+}
+
 blackout_conflict() {
-  local job suffix key cal service length point window win_day span start_s end_s old_ifs
+  local job suffix key cal service length point window win_day span start_s end_s old_ifs base_cal extra
   require_blackouts
+  reject_unknown_calendars
   for job in WATCH WATCH_PROMOTE PREPPINGDEALS AIM EXPIRY; do
     case "$job" in
       WATCH) service=stash-deals-watch.service.in ;;
@@ -205,6 +237,15 @@ blackout_conflict() {
       EXPIRY) service=stash-deals-expiry.service.in ;;
     esac
     length=$(timeout_seconds "$service")
+    eval "base_cal=\${ONCALENDAR_${job}:-}"
+    for suffix in _2 _3; do
+      key="ONCALENDAR_${job}${suffix}"
+      eval "extra=\${${key}:-}"
+      if [ -n "$extra" ] && [ -z "$base_cal" ]; then
+        echo "calendar $key needs a base" >&2
+        exit 2
+      fi
+    done
     for suffix in "" _2 _3; do
       key="ONCALENDAR_${job}${suffix}"
       eval "cal=\${${key}:-}"
@@ -321,28 +362,59 @@ bad_unit_value() {
 }
 
 assert_plain() {
-  label=$1
-  value=$2
+  local label=$1 value=$2
   case "$value" in
     *$'\n'*|*$'\r'*|*%*) bad_unit_value "$label" ;;
   esac
 }
 
 assert_abs_path() {
-  label=$1
-  value=$2
+  local label=$1 value=$2
   assert_plain "$label" "$value"
   printf '%s\n' "$value" | grep -Eq '^/[A-Za-z0-9._/-]+$' || bad_unit_value "$label"
+  case "/${value#/}/" in
+    *'/../'*|*'/./'*|*'//'*) bad_unit_value "$label" ;;
+  esac
+}
+
+assert_cred_path() {
+  local label=$1 value=$2 root
+  assert_abs_path "$label" "$value"
+  if [ -z "${CRED_DIR:-}" ]; then
+    echo "credential path $label needs CRED_DIR" >&2
+    exit 2
+  fi
+  assert_abs_path CRED_DIR "$CRED_DIR"
+  root=${CRED_DIR%/}
+  case "$value" in
+    "$root"/*) ;;
+    *) echo "credential path $label is outside CRED_DIR" >&2; exit 2 ;;
+  esac
 }
 
 assert_calendar() {
-  label=$1
-  value=$2
+  local label=$1 value=$2 token left right a b
   assert_plain "$label" "$value"
   case "$value" in
     *'  '*|*'	'*) bad_unit_value "$label" ;;
   esac
-  printf '%s\n' "$value" | grep -Eq '^(daily|(Mon|Tue|Wed|Thu|Fri|Sat|Sun)(\.\.(Mon|Tue|Wed|Thu|Fri|Sat|Sun))?|\*-\*-\*)( \*-\*-\*)? [0-9]{2}:[0-9]{2}(:[0-9]{2})?$' || bad_unit_value "$label"
+  printf '%s\n' "$value" | grep -Eq '^((Mon|Tue|Wed|Thu|Fri|Sat|Sun)(\.\.(Mon|Tue|Wed|Thu|Fri|Sat|Sun))? )?(\*-\*-\* )?[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' || bad_unit_value "$label"
+  token=${value%% *}
+  case "$token" in
+    *..*)
+      left=${token%%..*}
+      right=${token##*..}
+      a=$(day_number "$left") || exit 2
+      b=$(day_number "$right") || exit 2
+      if [ "$a" -gt "$b" ]; then
+        echo "backward day range $value" >&2
+        exit 2
+      fi
+      ;;
+  esac
+  if command -v systemd-analyze >/dev/null 2>&1; then
+    systemd-analyze calendar "$value" >/dev/null 2>&1 || bad_unit_value "$label"
+  fi
 }
 
 render_units() {
@@ -385,13 +457,13 @@ render_units() {
       assert_abs_path STASH_ENV "${STASH_ENV_PATH:-$ENV_FILE}"
     fi
     if grep -q '@CRED_GH@' "$src"; then
-      assert_abs_path CRED_GH "${CRED_GH:-}"
+      assert_cred_path CRED_GH "${CRED_GH:-}"
     fi
     if grep -q '@CRED_GMAIL@' "$src"; then
-      assert_abs_path CRED_GMAIL "${CRED_GMAIL:-}"
+      assert_cred_path CRED_GMAIL "${CRED_GMAIL:-}"
     fi
     if grep -q '@CRED_DRIVE@' "$src"; then
-      assert_abs_path CRED_DRIVE "${CRED_DRIVE:-}"
+      assert_cred_path CRED_DRIVE "${CRED_DRIVE:-}"
     fi
     sed \
       -e "s|@ONCALENDAR@|$calendar|g" \
@@ -419,6 +491,9 @@ append_extra_calendars() {
         key="ONCALENDAR_${suffix}_${n}"
         eval "value=\${${key}:-}"
         [ -n "$value" ] || continue
+        case "$calendar" in
+          @*|"") echo "calendar $key needs a base" >&2; exit 2 ;;
+        esac
         assert_calendar "$key" "$value"
         printf 'OnCalendar=%s\n' "$value" >> "$tmp"
       done
@@ -576,7 +651,7 @@ case "$MODE" in
     unit_home=${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user
     render_units "$unit_home"
     if command -v systemd-analyze >/dev/null 2>&1; then
-      systemd-analyze --user verify "$unit_home"/stash-deals-*.service
+      systemd-analyze --user verify "$unit_home"/stash-deals-*.service "$unit_home"/stash-deals-*.timer
     fi
     if command -v systemctl >/dev/null 2>&1; then
       systemctl --user daemon-reload

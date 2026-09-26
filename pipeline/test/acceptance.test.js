@@ -487,11 +487,21 @@ test("AT-20 publisher branch and spawn allowlist", () => {
 function botPaths(env) {
   const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
   const script = yaml.split("# bot-paths-begin")[1].split("# bot-paths-end")[0];
-  return spawnSync("bash", ["-c", script], { cwd: repoRoot, env: { ...process.env, ...env }, encoding: "utf8" });
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "bot-paths-"));
+  return spawnSync("bash", ["-c", script], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      RUNNER_TEMP: temp,
+      BASE_SHA: "65dcbe0a9b6d9dfd5f0bb55d0373a6b59cd01435",
+      ...env,
+    },
+    encoding: "utf8",
+  });
 }
 
 test("AT-21 bot path cases", () => {
-  const forbidden = ["scripts/build.mjs", "src/nav.js", "functions/api/report-expired.js", "pipeline/src/jobs/run.js", "ops/runner/install.sh", ".github/workflows/ci.yml", "public/_headers", "data/banned-brands.json", "data/merchant-allowlist.json", "data/policy-exceptions.json", "pipeline/config/fetch-allowlist.json", "data/expired-reports.json"];
+  const forbidden = ["scripts/build.mjs", "src/nav.js", "functions/api/report-expired.js", "pipeline/src/jobs/run.js", "pipeline/src/bot-paths.js", "ops/runner/install.sh", ".github/workflows/ci.yml", "public/_headers", "data/banned-brands.json", "data/merchant-allowlist.json", "data/policy-exceptions.json", "pipeline/config/fetch-allowlist.json", "data/expired-reports.json"];
   for (const file of forbidden) {
     const result = botPaths({
       PR_LOGIN: "stash-deals-bot",
@@ -544,6 +554,33 @@ test("AT-21 bot path cases", () => {
     FILES_OVERRIDE: "public/images/deals/aim-widget.jpg",
   });
   assert.equal(image.status, 0);
+});
+
+test("bot-paths job loads the module from the base commit", () => {
+  const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  const script = yaml.split("# bot-paths-begin")[1].split("# bot-paths-end")[0];
+  assert.equal(script.includes("node pipeline/src/bot-paths.js"), false);
+  assert.match(script, /git show "\$BASE_SHA:pipeline\/src\/bot-paths\.js"/);
+  const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).stdout.trim();
+  const common = {
+    PR_LOGIN: "stash-deals-bot",
+    BOT_LOGIN: "stash-deals-bot",
+    PR_TYPE: "Bot",
+    HEAD_REF: "bot/watch/20260925-1",
+  };
+  const missing = botPaths({
+    ...common,
+    BASE_SHA: "165cac31898b39b66c776dc00b58883a07e62cdd",
+    FILES_OVERRIDE: "data/deals.json",
+  });
+  assert.equal(missing.status, 1, missing.stdout + missing.stderr);
+  assert.match(missing.stderr, /base is missing pipeline\/src\/bot-paths\.js/);
+  const foreign = botPaths({ ...common, BASE_SHA: head, FILES_OVERRIDE: "data/deals-extra.json" });
+  assert.equal(foreign.status, 1, foreign.stdout + foreign.stderr);
+  const nested = botPaths({ ...common, BASE_SHA: head, FILES_OVERRIDE: "public/images/deals/nested/card.jpg" });
+  assert.equal(nested.status, 1, nested.stdout + nested.stderr);
+  const allowed = botPaths({ ...common, BASE_SHA: head, FILES_OVERRIDE: "public/images/deals/aim-widget.jpg" });
+  assert.equal(allowed.status, 0, allowed.stdout + allowed.stderr);
 });
 
 test("AT-22 check-bot-diff cases and base checkout", () => {
@@ -739,11 +776,11 @@ test("AT-29 unit templates, blackout, and placeholders", () => {
     overlap,
     [
       "BLACKOUT_WINDOWS=daily 00:00-06:00",
-      "ONCALENDAR_WATCH=daily 03:00",
-      "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
-      "ONCALENDAR_PREPPINGDEALS=daily 12:00",
-      "ONCALENDAR_AIM=daily 12:00",
-      "ONCALENDAR_EXPIRY=daily 12:00",
+      "ONCALENDAR_WATCH=*-*-* 03:00:00",
+      "ONCALENDAR_WATCH_PROMOTE=*-*-* 12:00:00",
+      "ONCALENDAR_PREPPINGDEALS=*-*-* 12:00:00",
+      "ONCALENDAR_AIM=*-*-* 12:00:00",
+      "ONCALENDAR_EXPIRY=*-*-* 12:00:00",
       "DRIVE_UPLOADER=node",
       "CRED_GH=cred-gh",
       "CRED_GMAIL=cred-gmail",
@@ -762,15 +799,16 @@ test("AT-29 unit templates, blackout, and placeholders", () => {
     okFile,
     [
       "BLACKOUT_WINDOWS=daily 00:00-06:00",
-      "ONCALENDAR_WATCH=daily 12:00",
-      "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
-      "ONCALENDAR_PREPPINGDEALS=daily 12:00",
-      "ONCALENDAR_AIM=daily 12:00",
-      "ONCALENDAR_EXPIRY=daily 12:00",
+      "ONCALENDAR_WATCH=*-*-* 12:00:00",
+      "ONCALENDAR_WATCH_PROMOTE=*-*-* 12:00:00",
+      "ONCALENDAR_PREPPINGDEALS=*-*-* 12:00:00",
+      "ONCALENDAR_AIM=*-*-* 12:00:00",
+      "ONCALENDAR_EXPIRY=*-*-* 12:00:00",
       "DRIVE_UPLOADER=node",
-      "CRED_GH=/tmp/stash-cred-gh",
-      "CRED_GMAIL=/tmp/stash-cred-gmail",
-      "CRED_DRIVE=/tmp/stash-cred-drive",
+      "CRED_DIR=/tmp/stash-creds",
+      "CRED_GH=/tmp/stash-creds/gh",
+      "CRED_GMAIL=/tmp/stash-creds/gmail",
+      "CRED_DRIVE=/tmp/stash-creds/drive",
       "NODE=/usr/bin/node",
       "CHECKOUT=/tmp/checkout",
       "STASH_ENV_PATH=/tmp/stash.env",
@@ -784,7 +822,7 @@ test("AT-29 unit templates, blackout, and placeholders", () => {
   assert.match(ok.stdout, /NOT ENFORCED \(user units\)/);
   const rendered = fs.readFileSync(path.join(render, "stash-deals-watch.timer"), "utf8");
   assert.equal(rendered.includes("@ONCALENDAR@"), false);
-  assert.match(rendered, /OnCalendar=daily 12:00/);
+  assert.match(rendered, /OnCalendar=\*-\*-\* 12:00:00/);
   const service = fs.readFileSync(path.join(render, "stash-deals-watch.service"), "utf8");
   for (const banned of ["IPAddressDeny=", "SocketBindDeny=", "PrivateTmp=", "ProtectSystem=", "ProtectHome=", "MemoryDenyWriteExecute="]) {
     assert.equal(service.includes(banned), false, banned);
