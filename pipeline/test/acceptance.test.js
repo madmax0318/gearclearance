@@ -545,6 +545,9 @@ test("AT-22 check-bot-diff cases and base checkout", () => {
   const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
   assert.equal(yaml.includes("ref: ${{ github.event.pull_request.base.sha }}"), true);
   assert.equal(yaml.includes("scripts/check-bot-diff.mjs"), true);
+  const baseJob = yaml.split("check-bot-diff:")[1];
+  assert.equal(baseJob.includes("node-version-file"), false);
+  assert.match(baseJob, /node-version: "22"/);
   const today = "2026-09-25";
   const base = [{ slug: "keep-me", title: "Keep", posted: "2026-09-01", curated: false, url: "https://www.rei.com/p" }];
   function withDirs(headLive, headArchive, policyEdit) {
