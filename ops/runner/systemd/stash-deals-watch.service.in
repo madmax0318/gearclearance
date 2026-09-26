@@ -4,7 +4,7 @@ OnFailure=stash-deals-alert@%n.service
 
 [Service]
 Type=oneshot
-TimeoutStartSec=25min
+TimeoutStartSec=40min
 Nice=19
 IOSchedulingClass=idle
 SyslogIdentifier=stash-deals

@@ -422,10 +422,11 @@ const publishBase = {
 
 test("RM-1 publish stays on main and refuses empty or foreign paths", async () => {
   assert.equal(allowedCommitPath("data/deals.json"), true);
-  assert.equal(allowedCommitPath("data/deals-extra.json"), true);
   assert.equal(allowedCommitPath("data/expired/deals.json"), true);
   assert.equal(allowedCommitPath("public/images/deals/card.jpg"), true);
-  assert.equal(allowedCommitPath("public/images/deals/nested/card.webp"), true);
+  assert.equal(allowedCommitPath("public/images/deals/aim-widget.webp"), true);
+  assert.equal(allowedCommitPath("data/deals-extra.json"), false);
+  assert.equal(allowedCommitPath("public/images/deals/nested/card.webp"), false);
   for (const bad of ["../data/deals.json", "/data/deals.json", "data\\deals.json", "README.md", "public/images/deals/../../etc/passwd", "data/expired/deals-extra.json"]) {
     assert.equal(allowedCommitPath(bad), false, bad);
   }
@@ -511,7 +512,7 @@ test("RM-2 zero accepted picks skip the token and the publisher", async () => {
 
 test("RM-3 job timeouts sit above the shared lock and units run idle", () => {
   const jobs = {
-    "stash-deals-watch.service.in": 25,
+    "stash-deals-watch.service.in": 40,
     "stash-deals-watch-promote.service.in": 30,
     "stash-deals-preppingdeals.service.in": 35,
     "stash-deals-aim.service.in": 40,
@@ -683,4 +684,160 @@ test("gitleaks ignore lists public site-verification fingerprints", () => {
     assert.match(line, /^[0-9a-f]{40}:scripts\/build\.mjs:generic-api-key:\d+$/);
   }
   assert.equal(ignore.includes("pipeline/test/"), false);
+});
+
+const weekdayCalendars = [
+  "ONCALENDAR_WATCH=Mon..Fri *-*-* 12:00:00",
+  "ONCALENDAR_WATCH_PROMOTE=Mon..Fri 12:00",
+  "ONCALENDAR_PREPPINGDEALS=Mon..Fri *-*-* 12:00:00",
+  "ONCALENDAR_AIM=Mon..Fri 12:00",
+  "ONCALENDAR_EXPIRY=Mon..Fri 12:00",
+  "DRIVE_UPLOADER=node",
+];
+
+test("blackout windows fail closed", () => {
+  const script = fs.readFileSync(path.join(repoRoot, "ops/runner/install.sh"), "utf8");
+  assert.match(script, /point=\$\(to_seconds "\$PARSED_CLOCK"\) \|\| exit 2/);
+  assert.match(script, /start_s=\$\(to_seconds "\$\{span%%-\*\}"\) \|\| exit 2/);
+  assert.match(script, /end_s=\$\(to_seconds "\$\{span##\*-\}"\) \|\| exit 2/);
+  const refused = (windows) => checkInstall([`BLACKOUT_WINDOWS=${windows}`, ...quietCalendars]);
+  for (const windows of ["<windows>", "daily 00:00\u201306:00", "daly 00:00-06:00", ""]) {
+    const result = refused(windows);
+    assert.equal(result.status, 2, `${JSON.stringify(windows)}\n${result.stdout}${result.stderr}`);
+  }
+  const wildcard = checkInstall(["BLACKOUT_WINDOWS=daily 00:00-06:00", "ONCALENDAR_WATCH=*-*-* 05:50:00", ...quietCalendars.slice(1)]);
+  assert.equal(wildcard.status, 1, wildcard.stdout + wildcard.stderr);
+  assert.match(wildcard.stderr, /blackout overlap/);
+  const saturday = checkInstall(["BLACKOUT_WINDOWS=Sat 12:00-13:00", ...weekdayCalendars]);
+  assert.equal(saturday.status, 0, saturday.stdout + saturday.stderr);
+  const wednesday = checkInstall(["BLACKOUT_WINDOWS=Wed 12:00-13:00", ...weekdayCalendars]);
+  assert.equal(wednesday.status, 1, wednesday.stdout + wednesday.stderr);
+  const badClock = checkInstall(["BLACKOUT_WINDOWS=daily 00:00-06:00", "ONCALENDAR_WATCH=daily 99:99", ...quietCalendars.slice(1)]);
+  assert.equal(badClock.status, 2, badClock.stdout + badClock.stderr);
+});
+
+test("two-run watch and preppingdeals calendars render and stay outside the blackout", () => {
+  const render = fs.mkdtempSync(path.join(os.tmpdir(), "two-run-"));
+  const lines = [
+    "BLACKOUT_WINDOWS=daily 00:00-06:00",
+    "ONCALENDAR_WATCH=Mon..Fri *-*-* 08:59:00",
+    "ONCALENDAR_WATCH_2=Mon..Fri *-*-* 16:59:00",
+    "ONCALENDAR_WATCH_PROMOTE=daily 12:00",
+    "ONCALENDAR_PREPPINGDEALS=daily *-*-* 08:07:00",
+    "ONCALENDAR_PREPPINGDEALS_2=daily *-*-* 18:07:00",
+    "ONCALENDAR_AIM=daily 12:00",
+    "ONCALENDAR_EXPIRY=daily 12:00",
+    "ONCALENDAR_EXPIRY_3=daily 21:00:00",
+    "DRIVE_UPLOADER=node",
+    "CRED_GH=/tmp/stash-cred-gh",
+    "CRED_GMAIL=/tmp/stash-cred-gmail",
+    "CRED_DRIVE=/tmp/stash-cred-drive",
+    "NODE=/usr/bin/node",
+    "CHECKOUT=/tmp/checkout",
+  ];
+  const envFile = path.join(os.tmpdir(), `two-run-${process.pid}.env`);
+  fs.writeFileSync(envFile, lines.join("\n"));
+  const result = spawnSync("bash", [path.join(repoRoot, "ops/runner/install.sh"), "--check"], {
+    env: { ...process.env, STASH_ENV: envFile, STASH_RENDER_DIR: render },
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const calendars = (name) => fs.readFileSync(path.join(render, name), "utf8").split("\n").filter((line) => line.startsWith("OnCalendar="));
+  assert.deepEqual(calendars("stash-deals-watch.timer"), [
+    "OnCalendar=Mon..Fri *-*-* 08:59:00",
+    "OnCalendar=Mon..Fri *-*-* 16:59:00",
+  ]);
+  assert.deepEqual(calendars("stash-deals-preppingdeals.timer"), [
+    "OnCalendar=daily *-*-* 08:07:00",
+    "OnCalendar=daily *-*-* 18:07:00",
+  ]);
+  assert.deepEqual(calendars("stash-deals-expiry.timer"), [
+    "OnCalendar=daily 12:00",
+    "OnCalendar=daily 21:00:00",
+  ]);
+  const early = checkInstall([
+    "BLACKOUT_WINDOWS=daily 00:00-06:00",
+    "ONCALENDAR_WATCH=Mon..Fri *-*-* 08:59:00",
+    "ONCALENDAR_WATCH_2=daily 05:50:00",
+    ...quietCalendars.slice(1),
+  ]);
+  assert.equal(early.status, 1, early.stdout + early.stderr);
+  assert.match(early.stderr, /blackout overlap: ONCALENDAR_WATCH_2/);
+  const example = fs.readFileSync(path.join(repoRoot, "ops/runner/stash.env.example"), "utf8");
+  for (const key of ["ONCALENDAR_WATCH_2", "ONCALENDAR_WATCH_PROMOTE_2", "ONCALENDAR_PREPPINGDEALS_2", "ONCALENDAR_AIM_2", "ONCALENDAR_EXPIRY_2"]) {
+    assert.match(example, new RegExp(`^${key}=<calendar>$`, "m"));
+  }
+});
+
+test("publish paths match the shared bot path module", () => {
+  const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  assert.match(yaml, /node pipeline\/src\/bot-paths\.js "\$file"/);
+  assert.equal(yaml.includes("public/images/deals/[a-z0-9]"), false);
+  const probe = (file) => spawnSync(process.execPath, [path.join(repoRoot, "pipeline/src/bot-paths.js"), file], { encoding: "utf8" });
+  assert.equal(probe("data/deals.json").status, 0);
+  assert.equal(probe("data/expired/deals.json").status, 0);
+  assert.equal(probe("public/images/deals/aim-widget.jpg").status, 0);
+  assert.equal(probe("data/deals-extra.json").status, 1);
+  assert.equal(probe("public/images/deals/nested/card.webp").status, 1);
+});
+
+test("watch promote does not mint when accepted picks produce no candidates", async () => {
+  let minted = 0;
+  let published = 0;
+  const plan = await runWatchPromote({
+    records: [{ file_id: "good", run_id: "run-1", parent_id: "folder", created_at: "2026-09-24T00:00:00Z" }],
+    drive: {
+      async get() {
+        return { parentId: "folder", mimeType: "text/plain" };
+      },
+      async export() {
+        return "[x] C01 card\n[x] SUBMIT\n";
+      },
+    },
+    reviewIds: new Set(["C01"]),
+    cards: [{ pick_id: "C99", slug: "watch-one", title: "Card", url: "https://www.rei.com/p", category: "survival" }],
+    dryRun: false,
+    date: "2026-09-25",
+    now: new Date("2026-09-25T00:00:00Z"),
+    mint: async () => {
+      minted += 1;
+      return { token: "token" };
+    },
+    publish: async () => {
+      published += 1;
+    },
+  });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.published, false);
+  assert.equal(plan.branch, "bot/watch/20260925-1");
+  assert.equal(minted, 0);
+  assert.equal(published, 0);
+});
+
+test("install paths use an allowlist", () => {
+  const script = fs.readFileSync(path.join(repoRoot, "ops/runner/install.sh"), "utf8");
+  const fn = script.split("assert_abs_path()")[1].split("assert_calendar()")[0];
+  assert.match(fn, /\^\/\[A-Za-z0-9\._\/-\]\+\$/);
+  assert.equal(fn.includes("*..*"), false);
+  const render = fs.mkdtempSync(path.join(os.tmpdir(), "path-allow-"));
+  const base = [
+    "BLACKOUT_WINDOWS=daily 00:00-06:00",
+    ...quietCalendars,
+    "CRED_GH=/tmp/stash-cred-gh",
+    "CRED_GMAIL=/tmp/stash-cred-gmail",
+    "CRED_DRIVE=/tmp/stash-cred-drive",
+    "NODE=/usr/bin/node",
+  ];
+  const run = (checkout) => {
+    const envFile = path.join(os.tmpdir(), `path-allow-${process.pid}-${Math.random().toString(16).slice(2)}.env`);
+    fs.writeFileSync(envFile, [...base, `CHECKOUT=${checkout}`].join("\n"));
+    return spawnSync("bash", [path.join(repoRoot, "ops/runner/install.sh"), "--check"], {
+      env: { ...process.env, STASH_ENV: envFile, STASH_RENDER_DIR: render },
+      encoding: "utf8",
+    });
+  };
+  const dotted = run("/tmp/../checkout");
+  assert.equal(dotted.status, 0, dotted.stdout + dotted.stderr);
+  const metachar = run("/tmp/checkout;id");
+  assert.equal(metachar.status, 2, metachar.stdout + metachar.stderr);
 });

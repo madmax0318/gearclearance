@@ -487,7 +487,7 @@ test("AT-20 publisher branch and spawn allowlist", () => {
 function botPaths(env) {
   const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
   const script = yaml.split("# bot-paths-begin")[1].split("# bot-paths-end")[0];
-  return spawnSync("bash", ["-c", script], { env: { ...process.env, ...env }, encoding: "utf8" });
+  return spawnSync("bash", ["-c", script], { cwd: repoRoot, env: { ...process.env, ...env }, encoding: "utf8" });
 }
 
 test("AT-21 bot path cases", () => {

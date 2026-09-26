@@ -116,43 +116,123 @@ span_hits_window() {
   [ "$delta" -lt "$len" ]
 }
 
+day_number() {
+  case "$1" in
+    Mon) echo 1 ;;
+    Tue) echo 2 ;;
+    Wed) echo 3 ;;
+    Thu) echo 4 ;;
+    Fri) echo 5 ;;
+    Sat) echo 6 ;;
+    Sun) echo 7 ;;
+    *) echo "bad day $1" >&2; return 2 ;;
+  esac
+}
+
+days_overlap() {
+  local cal=$1 win=$2 left right a b w
+  if [ "$cal" = "daily" ] || [ "$win" = "daily" ]; then
+    return 0
+  fi
+  case "$cal" in
+    *..*)
+      left=${cal%%..*}
+      right=${cal##*..}
+      a=$(day_number "$left") || exit 2
+      b=$(day_number "$right") || exit 2
+      w=$(day_number "$win") || exit 2
+      if [ "$a" -le "$b" ]; then
+        [ "$w" -ge "$a" ] && [ "$w" -le "$b" ]
+      else
+        [ "$w" -ge "$a" ] || [ "$w" -le "$b" ]
+      fi
+      ;;
+    *)
+      [ "$cal" = "$win" ]
+      ;;
+  esac
+}
+
+parse_calendar() {
+  local value=$1 rest clock
+  clock=${value##* }
+  rest=${value% *}
+  case "$rest" in
+    *' *-*-*') rest=${rest%' *-*-*'} ;;
+  esac
+  case "$rest" in
+    '*-*-*') rest=daily ;;
+  esac
+  PARSED_DAY=$rest
+  PARSED_CLOCK=$clock
+}
+
+require_blackouts() {
+  local window count=0 old_ifs
+  if [ -z "${BLACKOUT_WINDOWS:-}" ]; then
+    echo "blackout windows required" >&2
+    exit 2
+  fi
+  old_ifs=$IFS
+  IFS=';'
+  set -f
+  for window in $BLACKOUT_WINDOWS; do
+    count=$((count + 1))
+    printf '%s\n' "$window" | grep -Eq '^(daily|Mon|Tue|Wed|Thu|Fri|Sat|Sun) [0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$' || {
+      set +f
+      IFS=$old_ifs
+      echo "bad blackout window" >&2
+      exit 2
+    }
+  done
+  set +f
+  IFS=$old_ifs
+  if [ "$count" -lt 1 ]; then
+    echo "blackout windows required" >&2
+    exit 2
+  fi
+}
+
 blackout_conflict() {
-  calendars="ONCALENDAR_WATCH ONCALENDAR_WATCH_PROMOTE ONCALENDAR_PREPPINGDEALS ONCALENDAR_AIM ONCALENDAR_EXPIRY"
-  for key in $calendars; do
-    eval "cal=\${$key:-}"
-    [ -n "$cal" ] || continue
-    assert_calendar "$key" "$cal"
-    cal_day=${cal%% *}
-    cal_clock=${cal##* }
-    point=$(to_seconds "$cal_clock")
-    case "$key" in
-      ONCALENDAR_WATCH) service=stash-deals-watch.service.in ;;
-      ONCALENDAR_WATCH_PROMOTE) service=stash-deals-watch-promote.service.in ;;
-      ONCALENDAR_PREPPINGDEALS) service=stash-deals-preppingdeals.service.in ;;
-      ONCALENDAR_AIM) service=stash-deals-aim.service.in ;;
-      ONCALENDAR_EXPIRY) service=stash-deals-expiry.service.in ;;
+  local job suffix key cal service length point window win_day span start_s end_s old_ifs
+  require_blackouts
+  for job in WATCH WATCH_PROMOTE PREPPINGDEALS AIM EXPIRY; do
+    case "$job" in
+      WATCH) service=stash-deals-watch.service.in ;;
+      WATCH_PROMOTE) service=stash-deals-watch-promote.service.in ;;
+      PREPPINGDEALS) service=stash-deals-preppingdeals.service.in ;;
+      AIM) service=stash-deals-aim.service.in ;;
+      EXPIRY) service=stash-deals-expiry.service.in ;;
     esac
     length=$(timeout_seconds "$service")
-    old_ifs=$IFS
-    IFS=';'
-    set -f
-    for window in ${BLACKOUT_WINDOWS:-}; do
-      win_day=${window%% *}
-      span=${window##* }
-      start=${span%%-*}
-      end=${span##*-}
-      if [ "$win_day" != "daily" ] && [ "$cal_day" != "daily" ] && [ "$win_day" != "$cal_day" ]; then
-        continue
-      fi
-      if span_hits_window "$point" "$length" "$(to_seconds "$start")" "$(to_seconds "$end")"; then
-        set +f
-        IFS=$old_ifs
-        echo "blackout overlap: $key $cal" >&2
-        return 1
-      fi
+    for suffix in "" _2 _3; do
+      key="ONCALENDAR_${job}${suffix}"
+      eval "cal=\${${key}:-}"
+      [ -n "$cal" ] || continue
+      assert_calendar "$key" "$cal"
+      parse_calendar "$cal"
+      point=$(to_seconds "$PARSED_CLOCK") || exit 2
+      old_ifs=$IFS
+      IFS=';'
+      set -f
+      for window in $BLACKOUT_WINDOWS; do
+        win_day=${window%% *}
+        span=${window##* }
+        start_s=$(to_seconds "${span%%-*}") || exit 2
+        end_s=$(to_seconds "${span##*-}") || exit 2
+        if ! days_overlap "$PARSED_DAY" "$win_day"; then
+          continue
+        fi
+        if span_hits_window "$point" "$length" "$start_s" "$end_s"; then
+          set +f
+          IFS=$old_ifs
+          echo "blackout overlap: $key $cal" >&2
+          return 1
+        fi
+      done
+      set +f
+      IFS=$old_ifs
     done
-    set +f
-    IFS=$old_ifs
   done
   return 0
 }
@@ -252,13 +332,7 @@ assert_abs_path() {
   label=$1
   value=$2
   assert_plain "$label" "$value"
-  case "$value" in
-    /*) ;;
-    *) bad_unit_value "$label" ;;
-  esac
-  case "$value" in
-    *[[:space:]]*|*'..'*) bad_unit_value "$label" ;;
-  esac
+  printf '%s\n' "$value" | grep -Eq '^/[A-Za-z0-9._/-]+$' || bad_unit_value "$label"
 }
 
 assert_calendar() {
@@ -268,7 +342,7 @@ assert_calendar() {
   case "$value" in
     *'  '*|*'	'*) bad_unit_value "$label" ;;
   esac
-  printf '%s\n' "$value" | grep -Eq '^[A-Za-z0-9*.,/-]+ [0-9]{1,2}:[0-9]{2}(:[0-9]{2})?$' || bad_unit_value "$label"
+  printf '%s\n' "$value" | grep -Eq '^(daily|(Mon|Tue|Wed|Thu|Fri|Sat|Sun)(\.\.(Mon|Tue|Wed|Thu|Fri|Sat|Sun))?|\*-\*-\*)( \*-\*-\*)? [0-9]{2}:[0-9]{2}(:[0-9]{2})?$' || bad_unit_value "$label"
 }
 
 render_units() {
@@ -277,12 +351,13 @@ render_units() {
   for src in "$UNIT_SRC"/*; do
     name=$(basename "$src" .in)
     calendar=@ONCALENDAR@
+    cal_suffix=
     case "$name" in
-      stash-deals-watch.timer) calendar=${ONCALENDAR_WATCH:-@ONCALENDAR@} ;;
-      stash-deals-watch-promote.timer) calendar=${ONCALENDAR_WATCH_PROMOTE:-@ONCALENDAR@} ;;
-      stash-deals-preppingdeals.timer) calendar=${ONCALENDAR_PREPPINGDEALS:-@ONCALENDAR@} ;;
-      stash-deals-aim.timer) calendar=${ONCALENDAR_AIM:-@ONCALENDAR@} ;;
-      stash-deals-expiry.timer) calendar=${ONCALENDAR_EXPIRY:-@ONCALENDAR@} ;;
+      stash-deals-watch.timer) cal_suffix=WATCH; calendar=${ONCALENDAR_WATCH:-@ONCALENDAR@} ;;
+      stash-deals-watch-promote.timer) cal_suffix=WATCH_PROMOTE; calendar=${ONCALENDAR_WATCH_PROMOTE:-@ONCALENDAR@} ;;
+      stash-deals-preppingdeals.timer) cal_suffix=PREPPINGDEALS; calendar=${ONCALENDAR_PREPPINGDEALS:-@ONCALENDAR@} ;;
+      stash-deals-aim.timer) cal_suffix=AIM; calendar=${ONCALENDAR_AIM:-@ONCALENDAR@} ;;
+      stash-deals-expiry.timer) cal_suffix=EXPIRY; calendar=${ONCALENDAR_EXPIRY:-@ONCALENDAR@} ;;
     esac
     job=
     case "$name" in
@@ -328,7 +403,28 @@ render_units() {
       -e "s|@STASH_ENV@|${STASH_ENV_PATH:-$ENV_FILE}|g" \
       -e "s|STASH_DRY_RUN=1|STASH_DRY_RUN=$dry|g" \
       "$src" > "$dest/$name"
+    if [ -n "$cal_suffix" ]; then
+      append_extra_calendars "$dest/$name" "$cal_suffix"
+    fi
   done
+}
+
+append_extra_calendars() {
+  local destfile=$1 suffix=$2 n key value tmp line
+  tmp=$(mktemp)
+  while IFS= read -r line || [ -n "$line" ]; do
+    printf '%s\n' "$line" >> "$tmp"
+    if [ "$line" = "OnCalendar=${calendar}" ]; then
+      for n in 2 3; do
+        key="ONCALENDAR_${suffix}_${n}"
+        eval "value=\${${key}:-}"
+        [ -n "$value" ] || continue
+        assert_calendar "$key" "$value"
+        printf 'OnCalendar=%s\n' "$value" >> "$tmp"
+      done
+    fi
+  done < "$destfile"
+  mv "$tmp" "$destfile"
 }
 
 directive_checklist() {

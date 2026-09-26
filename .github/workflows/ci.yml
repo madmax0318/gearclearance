@@ -93,10 +93,7 @@ jobs:
             fi
             while IFS= read -r file; do
               [ -n "$file" ] || continue
-              if [ "$file" = "data/deals.json" ] || [ "$file" = "data/expired/deals.json" ]; then
-                continue
-              fi
-              if printf '%s' "$file" | grep -Eq '^public/images/deals/[a-z0-9]+(-[a-z0-9]+)*\.(jpg|webp)$'; then
+              if node pipeline/src/bot-paths.js "$file"; then
                 continue
               fi
               echo "forbidden $file" >&2
