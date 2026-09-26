@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 # Render and install user units from a private stash.env. Placeholders only in git.
 set -eu
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
 UNIT_SRC="$ROOT/ops/runner/systemd"
@@ -53,10 +54,17 @@ load_env() {
   done < "$file"
 }
 
-ENV_FILE=${STASH_ENV:-}
-if [ -n "$ENV_FILE" ] && [ -f "$ENV_FILE" ]; then
-  load_env "$ENV_FILE"
+if [ -n "${STASH_ENV:-}" ]; then
+  ENV_FILE=$STASH_ENV
+else
+  ENV_FILE=${XDG_CONFIG_HOME:-$HOME/.config}/stash-deals/stash.env
 fi
+if [ -f "$ENV_FILE" ]; then
+  load_env "$ENV_FILE"
+else
+  ENV_FILE=
+fi
+LIVE_FILE=${STASH_LIVE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/stash-deals/live-jobs}
 
 to_minutes() {
   hour=${1%%:*}
@@ -109,7 +117,7 @@ blackout_conflict() {
 
 known_cred() {
   case "$1" in
-    CRED_GH|CRED_GMAIL|CRED_DRIVE) return 0 ;;
+    CRED_GH|CRED_GMAIL|CRED_DRIVE|CRED_DIR) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -148,6 +156,34 @@ check_cred_dir() {
     echo "credential directory mode $mode" >&2
     exit 1
   fi
+  uid=$(id -u)
+  for file in "$CRED_DIR"/*; do
+    [ -e "$file" ] || continue
+    file_mode=$(stat -c %a "$file")
+    owner=$(stat -c %u "$file")
+    if [ "$file_mode" != "600" ] || [ "$owner" != "$uid" ]; then
+      echo "credential file $(basename "$file") mode $file_mode" >&2
+      exit 1
+    fi
+  done
+}
+
+job_is_live() {
+  [ -n "$1" ] && [ -f "$LIVE_FILE" ] && grep -w -x -q "$1" "$LIVE_FILE"
+}
+
+remember_live() {
+  mkdir -p "$(dirname "$LIVE_FILE")"
+  touch "$LIVE_FILE"
+  if ! grep -w -x -q "$1" "$LIVE_FILE"; then
+    printf '%s\n' "$1" >> "$LIVE_FILE"
+  fi
+}
+
+forget_live() {
+  [ -f "$LIVE_FILE" ] || return 0
+  grep -w -x -v "$1" "$LIVE_FILE" > "$LIVE_FILE.tmp" || true
+  mv "$LIVE_FILE.tmp" "$LIVE_FILE"
 }
 
 render_units() {
@@ -163,7 +199,18 @@ render_units() {
       stash-deals-aim.timer) calendar=${ONCALENDAR_AIM:-@ONCALENDAR@} ;;
       stash-deals-expiry.timer) calendar=${ONCALENDAR_EXPIRY:-@ONCALENDAR@} ;;
     esac
-    dry=${STASH_DRY_RUN:-1}
+    job=
+    case "$name" in
+      stash-deals-watch.service) job=watch ;;
+      stash-deals-watch-promote.service) job=watch-promote ;;
+      stash-deals-preppingdeals.service) job=preppingdeals ;;
+      stash-deals-aim.service) job=aim ;;
+      stash-deals-expiry.service) job=expiry ;;
+    esac
+    dry=1
+    if job_is_live "$job"; then
+      dry=0
+    fi
     sed \
       -e "s|@ONCALENDAR@|$calendar|g" \
       -e "s|@CRED_GH@|${CRED_GH:-}|g" \
@@ -207,7 +254,25 @@ ProtectSystem=
 ProtectHome=
 MemoryDenyWriteExecute=
 EOF
-    echo "ok $(basename "$src")"
+    base=$(basename "$src")
+    if ! grep -q "TimeoutStartSec=" "$src"; then
+      echo "missing TimeoutStartSec= in $base" >&2
+      return 1
+    fi
+    case "$base" in
+      stash-deals-alert@*) ;;
+      *)
+        if ! grep -q "OnFailure=" "$src"; then
+          echo "missing OnFailure= in $base" >&2
+          return 1
+        fi
+        if grep -q '^\[Install\]' "$src"; then
+          echo "timer-driven service has Install in $base" >&2
+          return 1
+        fi
+        ;;
+    esac
+    echo "ok $base"
   done
   for src in "$UNIT_SRC"/*.timer.in; do
     grep -q "AccuracySec=30s" "$src"
@@ -239,7 +304,7 @@ install_deps() {
 }
 
 prepare_data_git() {
-  dest=${DATA_GIT:-$ROOT/data.git}
+  dest=${DATA_GIT:-${XDG_DATA_HOME:-$HOME/.local/share}/stash-deals/data.git}
   if [ ! -d "$dest" ]; then
     git init --bare "$dest"
   fi
@@ -261,8 +326,8 @@ run_check() {
     ss -ltunHe 2>/dev/null | grep "uid:$(id -u)" || true
   fi
   deny=${SELF_CHECK_DENYLIST:-}
-  if [ -n "$deny" ] && command -v ss >/dev/null 2>&1; then
-    if ss -ltunHe 2>/dev/null | grep -F "$deny" >/dev/null; then
+    if [ -n "$deny" ] && command -v ss >/dev/null 2>&1; then
+    if ss -ltunHe 2>/dev/null | grep -w -F "$deny" >/dev/null; then
       echo "denylist hit" >&2
       exit 1
     fi
@@ -293,17 +358,20 @@ case "$MODE" in
     fi
     install_deps
     prepare_data_git
+    if [ "$MODE" = "live" ]; then
+      remember_live "$LIVE_JOB"
+    fi
+    if [ "$MODE" = "dry-run" ]; then
+      forget_live "$DRY_JOB"
+    fi
     unit_home=${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user
     render_units "$unit_home"
-    if [ "$MODE" = "live" ]; then
-      sed -i "s/STASH_DRY_RUN=1/STASH_DRY_RUN=0/" "$unit_home/stash-deals-$LIVE_JOB.service" || true
-    fi
     if command -v systemd-analyze >/dev/null 2>&1; then
       systemd-analyze --user verify "$unit_home"/stash-deals-*.service || true
     fi
     if command -v systemctl >/dev/null 2>&1; then
       systemctl --user daemon-reload || true
-      systemctl --user enable stash-deals-watch.timer stash-deals-watch-promote.timer stash-deals-preppingdeals.timer stash-deals-aim.timer stash-deals-expiry.timer || true
+      systemctl --user enable stash-deals-preppingdeals.timer stash-deals-aim.timer stash-deals-expiry.timer || true
     fi
     ;;
 esac

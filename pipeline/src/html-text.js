@@ -8,6 +8,11 @@ function hidden(node) {
   if (String(attribs["aria-hidden"] || "").toLowerCase() === "true") return true;
   const style = String(attribs.style || "").toLowerCase().replace(/\s/g, "");
   if (style.includes("display:none") || style.includes("visibility:hidden")) return true;
+  if (/font-size:0(?:px|em|rem|pt|%)?(?:;|$)/.test(style)) return true;
+  if (/opacity:0(?:\.0+)?(?:;|$)/.test(style)) return true;
+  if (/left:-\d/.test(style) || /top:-\d/.test(style) || /text-indent:-\d/.test(style)) return true;
+  if (/clip:rect\(/.test(style) || style.includes("clip-path:")) return true;
+  if (/height:0(?:px)?(?:;|$)/.test(style) || /width:0(?:px)?(?:;|$)/.test(style) || /max-height:0/.test(style)) return true;
   const className = String(attribs.class || "").toLowerCase();
   if (className.split(/\s+/).includes("preheader")) return true;
   if (String(attribs.id || "").toLowerCase() === "preheader") return true;

@@ -1,5 +1,6 @@
 const PICK_ID = /^\[x\] (C\d{2})\b/;
 const HOURS_72 = 72 * 60 * 60 * 1000;
+const EXACT_MIME = new Set(["text/plain", "application/vnd.google-apps.document"]);
 
 export function parsePickText(text, { reviewIds, max = 10 } = {}) {
   const raw = String(text ?? "");
@@ -11,17 +12,28 @@ export function parsePickText(text, { reviewIds, max = 10 } = {}) {
   for (const line of lines) {
     const match = PICK_ID.exec(line.trim());
     if (!match) continue;
-    if (reviewIds && !reviewIds.has(match[1])) continue;
+    if (!(reviewIds instanceof Set) || !reviewIds.has(match[1])) continue;
     ids.push(match[1]);
   }
   return { ok: true, accepted: ids.slice(0, max), deferred: ids.slice(max) };
 }
 
-export async function readRecordedPicks({ records, drive, reviewIds, now = new Date() }) {
+export async function readRecordedPicks({ records = [], drive, reviewIds, now = new Date(), runId } = {}) {
   const accepted = [];
   const deferred = [];
   const skipped = [];
+  if (!(reviewIds instanceof Set)) {
+    return {
+      accepted,
+      deferred,
+      skipped: (records || []).map((record) => ({ file_id: record.file_id, reason: "no-review" })),
+    };
+  }
   for (const record of records) {
+    if (runId && record.run_id !== runId) {
+      skipped.push({ file_id: record.file_id, reason: "run" });
+      continue;
+    }
     if (now.getTime() - Date.parse(record.created_at) > HOURS_72) {
       skipped.push({ file_id: record.file_id, reason: "expired" });
       continue;
@@ -31,7 +43,7 @@ export async function readRecordedPicks({ records, drive, reviewIds, now = new D
       skipped.push({ file_id: record.file_id, reason: "parent" });
       continue;
     }
-    if (meta.mimeType !== "text/plain" && meta.mimeType !== "application/vnd.google-apps.document") {
+    if (!EXACT_MIME.has(meta.mimeType)) {
       skipped.push({ file_id: record.file_id, reason: "mime" });
       continue;
     }

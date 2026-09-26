@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { chicagoDate } from "../pipeline/src/dates.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -55,7 +56,7 @@ function fileText(dir, rel) {
 export function checkBotDiff({ baseDir, headDir, bot = false, today }) {
   const errors = [];
   const warnings = [];
-  const day = today || new Date().toISOString().slice(0, 10);
+  const day = today || chicagoDate();
   const policy = new Set([...POLICY_FILES, ...listConfigFiles(baseDir), ...listConfigFiles(headDir)]);
   for (const rel of policy) {
     if (fileText(baseDir, rel) !== fileText(headDir, rel)) {
@@ -117,7 +118,7 @@ function main() {
     (process.env.PR_LOGIN &&
       process.env.PR_LOGIN === process.env.BOT_LOGIN &&
       process.env.PR_USER_TYPE === "Bot");
-  const today = flag(args, "--today") || process.env.BOT_TODAY || new Date().toISOString().slice(0, 10);
+  const today = flag(args, "--today") || process.env.BOT_TODAY || chicagoDate();
   const result = checkBotDiff({ baseDir, headDir, bot: Boolean(bot), today });
   for (const warning of result.warnings) console.log(`::warning::${warning}`);
   if (!result.ok) {

@@ -1,8 +1,10 @@
 [Unit]
 Description=Stash deals watch promote job
+OnFailure=stash-deals-alert@%n.service
 
 [Service]
 Type=oneshot
+TimeoutStartSec=120
 SyslogIdentifier=stash-deals
 ExecStart=@NODE@ @CHECKOUT@/pipeline/src/jobs/run.js watch-promote
 WorkingDirectory=@CHECKOUT@
@@ -17,8 +19,4 @@ UMask=0077
 StateDirectory=stash-deals
 StateDirectoryMode=0700
 LoadCredential=cred-gh:@CRED_GH@
-LoadCredential=cred-gmail:@CRED_GMAIL@
 LoadCredential=cred-drive:@CRED_DRIVE@
-
-[Install]
-WantedBy=default.target

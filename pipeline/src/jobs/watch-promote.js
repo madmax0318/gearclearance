@@ -18,7 +18,7 @@ export async function runWatchPromote({
   fetchImpl,
 }) {
   const picks = await readRecordedPicks({ records, drive, reviewIds, now });
-  const selected = cards.filter((card) => !picks.accepted.length || picks.accepted.includes(card.pick_id));
+  const selected = cards.filter((card) => card.pick_id && picks.accepted.includes(card.pick_id));
   const room = withinHeadroom(liveCount, selected);
   const stamp = String(date || "").replace(/-/g, "");
   const head = branch || `bot/watch/${stamp}-1`;

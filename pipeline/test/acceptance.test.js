@@ -273,13 +273,18 @@ test("AT-13 hidden text is dropped", () => {
       <div hidden>SECRETHIDDEN</div>
       <div aria-hidden="true">SECRETHARIA</div>
       <div style="display:none">SECRETDISPLAY</div>
+      <div style="font-size:0">SECRETFONT</div>
+      <div style="opacity:0">SECRETFADE</div>
+      <div style="left:-9999px">SECRETOFF</div>
+      <div style="text-indent:-9999px">SECRETINDENT</div>
+      <div style="clip:rect(0,0,0,0)">SECRETCLIP</div>
       <!-- SECRETCOMMENT -->
       <a href="https://www.example.net/hidden" hidden>nope</a>
       <a href="https://www.aimsurplus.com/products/widget">Visible product</a>
       <p>Visible copy</p>
     </body></html>`;
   const visible = visibleDocument(html);
-  for (const secret of ["SECRETHEAD", "SECRETJS", "SECRETPAD", "SECRETHIDDEN", "SECRETHARIA", "SECRETDISPLAY", "SECRETCOMMENT"]) {
+  for (const secret of ["SECRETHEAD", "SECRETJS", "SECRETPAD", "SECRETHIDDEN", "SECRETHARIA", "SECRETDISPLAY", "SECRETFONT", "SECRETFADE", "SECRETOFF", "SECRETINDENT", "SECRETCLIP", "SECRETCOMMENT"]) {
     assert.equal(visible.text.includes(secret), false, secret);
   }
   assert.equal(visible.text.includes("Visible copy"), true);
@@ -287,7 +292,7 @@ test("AT-13 hidden text is dropped", () => {
 });
 
 test("AT-14 hardened fetch rejects SSRF and the wrong prepping deals hosts", async () => {
-  for (const address of ["127.0.0.1", "10.1.1.1", "192.168.0.1", "172.16.0.1", "169.254.169.254", "100.64.0.1", "fd7a:115c:a1e0::1", "fe80::1"]) {
+  for (const address of ["127.0.0.1", "10.1.1.1", "192.168.0.1", "172.16.0.1", "169.254.169.254", "100.64.0.1", "fd7a:115c:a1e0::1", "fe80::1", "::", "::1", "::ffff:127.0.0.1", "::ffff:192.0.2.1", "64:ff9b::192.0.2.1", "2002:c000:201::", "febf::1"]) {
     assert.equal(ipBlocked(address) != null, true, address);
   }
   assert.equal(ipBlocked("192.0.2.10"), null);
@@ -325,7 +330,7 @@ function headersFrom(lines) {
 test("AT-15 first authentication-results gate", () => {
   const allow = new Set(["example.com"]);
   const from = "From: Deals <deals@mail.example.com>";
-  const pass = "Authentication-Results: mx.google.com; dmarc=pass; dkim=pass header.d=example.com";
+  const pass = "Authentication-Results: mx.google.com; dmarc=pass header.from=mail.example.com; dkim=pass header.d=mail.example.com";
   assert.equal(gateMessage({ headers: headersFrom([pass, from]), allowlist: allow }).ok, true);
   const forgedLower = headersFrom([
     "Authentication-Results: mx.google.com; dmarc=fail",
@@ -642,7 +647,7 @@ test("AT-26 missing credentials exit 2 and alert", async () => {
   await assert.rejects(
     () =>
       execute(["aim", "--live"], {
-        env: {},
+        env: { GH_APP_ID: "1", GH_INSTALLATION_ID: "2", GH_PRIVATE_KEY: "from-env" },
         date: "2026-09-25",
         pages: [],
         stateDir: dir,
@@ -718,6 +723,12 @@ test("AT-28 redaction and gitleaks config", () => {
   assert.equal(google.includes("ya29."), false);
   const pem = redact(`${["-----BEGIN ", "PRIVATE KEY-----"].join("")}\nabc\n${["-----END ", "PRIVATE KEY-----"].join("")}`);
   assert.equal(pem.includes("PRIVATE KEY"), false);
+  const refresh = redact(`token 1//${"abc".repeat(8)} end`);
+  assert.equal(refresh.includes("1//"), false);
+  const clientSecret = redact(`token ${"GOCSPX"}-${"abc".repeat(4)} end`);
+  assert.equal(clientSecret.includes("GOCSPX"), false);
+  const jwt = redact(`${"eyJ"}${"a".repeat(8)}.${"eyJ"}${"b".repeat(8)}.${"c".repeat(8)}`);
+  assert.equal(jwt.includes("eyJ"), false);
   const config = fs.readFileSync(path.join(repoRoot, ".gitleaks.toml"), "utf8");
   assert.match(config, /useDefault = true/);
 });
@@ -782,19 +793,38 @@ test("AT-29 unit templates, blackout, and placeholders", () => {
     path.join(repoRoot, "ops/runner/stash.env.example"),
     path.join(repoRoot, "pipeline/.env.example"),
   ];
+  const allowedValues = new Set(["USE_OLLAMA=0", "AUTO_PUBLISH=0", "AMMOSEEK_ENRICH=0", "OLLAMA_TIMEOUT_MS=30000"]);
   for (const file of committed) {
     const text = fs.readFileSync(file, "utf8");
-    assert.equal(text.includes("11434"), false, file);
-    assert.equal(/qwen|proton/i.test(text), false, file);
+    for (const line of text.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const shaped =
+        /^[A-Z0-9_]+=$/.test(trimmed) ||
+        /^[A-Z0-9_]+=<[a-z0-9-]+>$/.test(trimmed) ||
+        /^[A-Z0-9_]+=http:\/\/127\.0\.0\.1:<port>$/.test(trimmed) ||
+        allowedValues.has(trimmed);
+      assert.equal(shaped, true, `${file}: ${trimmed}`);
+    }
   }
 });
 
 test("AT-33 tokeninfo gate", async () => {
-  const good = async () => ({ ok: true, async json() { return { scope: "https://www.googleapis.com/auth/gmail.readonly", email: "inbox@example.com" }; } });
+  const good = async (url) => {
+    if (String(url).includes("tokeninfo")) {
+      return { ok: true, async json() { return { scope: "https://www.googleapis.com/auth/gmail.readonly" }; } };
+    }
+    return { ok: true, async json() { return { emailAddress: "inbox@example.com" }; } };
+  };
   await assertGmailToken({ fetchImpl: good, token: "token", inbox: "inbox@example.com" });
   await assert.rejects(
     () => assertGmailToken({
-      fetchImpl: async () => ({ ok: true, async json() { return { scope: "https://www.googleapis.com/auth/gmail.modify", email: "inbox@example.com" }; } }),
+      fetchImpl: async (url) => {
+        if (String(url).includes("tokeninfo")) {
+          return { ok: true, async json() { return { scope: "https://www.googleapis.com/auth/gmail.modify" }; } };
+        }
+        return { ok: true, async json() { return { emailAddress: "inbox@example.com" }; } };
+      },
       token: "token",
       inbox: "inbox@example.com",
     }),
@@ -802,7 +832,12 @@ test("AT-33 tokeninfo gate", async () => {
   );
   await assert.rejects(
     () => assertDriveToken({
-      fetchImpl: async () => ({ ok: true, async json() { return { scope: "https://www.googleapis.com/auth/drive.file", email: "other@example.com" }; } }),
+      fetchImpl: async (url) => {
+        if (String(url).includes("tokeninfo")) {
+          return { ok: true, async json() { return { scope: "https://www.googleapis.com/auth/drive.file" }; } };
+        }
+        return { ok: true, async json() { return { user: { emailAddress: "other@example.com" } }; } };
+      },
       token: "token",
       account: "drive@example.com",
     }),
@@ -810,28 +845,19 @@ test("AT-33 tokeninfo gate", async () => {
   );
 });
 
-test("AT-35 dry-run jobs do not listen or spawn", async () => {
-  const jobsDir = path.join(repoRoot, "pipeline/src/jobs");
-  for (const name of fs.readdirSync(jobsDir)) {
-    const text = fs.readFileSync(path.join(jobsDir, name), "utf8");
-    assert.equal(text.includes("node:net"), false, name);
-    assert.equal(text.includes("node:child_process"), false, name);
-    assert.equal(text.includes(".listen("), false, name);
-    assert.equal(text.includes("execFile"), false, name);
-  }
-  await runWatch({ messages: [] });
-  await runPreppingDeals({ rss: "<rss></rss>" });
-  await runAim({ pages: [] });
-  await runExpiry({ deals: [], pages: [] });
-  await runWatchPromote({
-    records: [],
-    drive: { async get() { throw new Error("get"); }, async export() { throw new Error("export"); } },
-    reviewIds: new Set(),
-    dryRun: true,
-    date: "2026-09-25",
-    liveCount: 0,
-    cards: [],
-  });
+test("AT-32 repository ruleset check is manual", () => {
+  const text = fs.readFileSync(path.join(repoRoot, "ops/runner/verify-github-guard.sh"), "utf8");
+  assert.match(text, /Manual ruleset verification/);
+  assert.match(text, /does not change repository settings/);
+});
+
+test("AT-35 dry-run jobs do not listen or spawn", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["--experimental-test-module-mocks", path.join(repoRoot, "pipeline/src/tools/dry-run-spy.mjs")],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });
 
 test("AT-36 allowlists have no wildcards and CDN prefixes", () => {
@@ -969,5 +995,6 @@ test("AT-39 watch promote and picks", async () => {
     cards: [{ slug: "watch-one", title: "Card", url: "https://www.rei.com/p", category: "survival", pick_id: "C01" }],
   });
   assert.equal(promoted.branch, "bot/watch/20260925-1");
+  assert.equal(promoted.candidates.length, 0);
   assert.equal(JSON.stringify(promoted).includes("raw_subject"), false);
 });

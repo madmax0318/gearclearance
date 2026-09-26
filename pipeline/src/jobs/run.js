@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "../config.js";
+import { chicagoDate } from "../dates.js";
 import { codedError } from "../log.js";
 import { assertDailyCeiling } from "../limits.js";
 import { publicPlan } from "../pr-template.js";
@@ -15,6 +16,17 @@ import { runWatchPromote } from "./watch-promote.js";
 
 const JOBS = new Set(["watch", "watch-promote", "preppingdeals", "aim", "expiry"]);
 
+export function readAppPrivateKey(env = process.env) {
+  const dir = env.CREDENTIALS_DIRECTORY;
+  if (!dir) return "";
+  const file = path.join(dir, "cred-gh");
+  try {
+    return fs.readFileSync(file, "utf8");
+  } catch {
+    return "";
+  }
+}
+
 export function isDry(argv, env = process.env) {
   if (argv.includes("--dry-run")) return true;
   if (argv.includes("--live")) return false;
@@ -26,9 +38,10 @@ export async function execute(argv, deps = {}) {
   if (!JOBS.has(job)) throw codedError(2, "job");
   const env = deps.env || process.env;
   const dry = deps.dryRun !== undefined ? deps.dryRun : isDry(argv, env);
-  const date = deps.date || new Date().toISOString().slice(0, 10);
+  const date = deps.date || chicagoDate();
+  const privateKey = readAppPrivateKey(env);
   if (!dry && job !== "watch") {
-    if (!env.GH_APP_ID || !env.GH_INSTALLATION_ID || !env.GH_PRIVATE_KEY) {
+    if (!env.GH_APP_ID || !env.GH_INSTALLATION_ID || !privateKey) {
       (deps.alert || writeAlert)({ code: 2, job, error: "E_CONFIG" }, { dir: deps.stateDir, journal: deps.journal });
       throw codedError(2, "creds");
     }
@@ -36,7 +49,14 @@ export async function execute(argv, deps = {}) {
   if (deps.db) assertDailyCeiling(deps.db, date);
   let result;
   if (job === "watch") result = await runWatch(deps);
-  else if (job === "watch-promote") result = await runWatchPromote({ ...deps, dryRun: dry, date });
+  else if (job === "watch-promote") {
+    result = await runWatchPromote({
+      ...deps,
+      dryRun: dry,
+      date,
+      tokenOptions: { ...(deps.tokenOptions || {}), appId: env.GH_APP_ID, installationId: env.GH_INSTALLATION_ID, privateKey },
+    });
+  }
   else if (job === "preppingdeals") result = await runPreppingDeals(deps);
   else if (job === "aim") result = await runAim(deps);
   else result = await runExpiry(deps);

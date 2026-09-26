@@ -307,6 +307,18 @@ function byNewest(a, b) {
   return b.posted.localeCompare(a.posted) || a.title.localeCompare(b.title);
 }
 
+export function applyDealText(deal) {
+  const title = checkTitle(deal.title);
+  if (!title.ok) throw new Error(`${title.reason} on ${deal.slug}`);
+  deal.title = title.text;
+  if (deal.why != null && deal.why !== "") {
+    const why = checkWhy(deal.why);
+    if (!why.ok) throw new Error(`${why.reason} on ${deal.slug}`);
+    deal.why = why.text;
+  }
+  return deal;
+}
+
 function dealLink(deal, allowlist, exceptions) {
   const verdict = checkDealUrl(deal.url, {
     category: deal.category,
@@ -315,12 +327,7 @@ function dealLink(deal, allowlist, exceptions) {
     exceptions,
   });
   if (!verdict.ok) throw new Error(`${verdict.reason} on ${deal.slug}`);
-  const title = checkTitle(deal.title);
-  if (!title.ok) throw new Error(`${title.reason} on ${deal.slug}`);
-  if (deal.why != null && deal.why !== "") {
-    const why = checkWhy(deal.why);
-    if (!why.ok) throw new Error(`${why.reason} on ${deal.slug}`);
-  }
+  applyDealText(deal);
 }
 
 function loadDeals() {

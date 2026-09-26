@@ -4,5 +4,5 @@ title = "stash deals"
 useDefault = true
 
 [allowlist]
-description = "placeholders and tests construct tokens at runtime"
-paths = ['''pipeline/test/''']
+description = "synthetic fixtures only"
+paths = ['''pipeline/fixtures/emails/''']

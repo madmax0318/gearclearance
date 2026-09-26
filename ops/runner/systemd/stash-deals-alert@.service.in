@@ -3,6 +3,7 @@ Description=Stash deals alert
 
 [Service]
 Type=oneshot
+TimeoutStartSec=120
 SyslogIdentifier=stash-deals
 ExecStart=@NODE@ @CHECKOUT@/pipeline/src/jobs/alert.js
 WorkingDirectory=@CHECKOUT@
@@ -16,9 +17,3 @@ LockPersonality=yes
 UMask=0077
 StateDirectory=stash-deals
 StateDirectoryMode=0700
-LoadCredential=cred-gh:@CRED_GH@
-LoadCredential=cred-gmail:@CRED_GMAIL@
-LoadCredential=cred-drive:@CRED_DRIVE@
-
-[Install]
-WantedBy=default.target

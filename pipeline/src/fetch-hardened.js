@@ -26,10 +26,7 @@ export function loadFetchAllowlist(file = path.join(root, "config", "fetch-allow
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-export function ipBlocked(address) {
-  const value = String(address || "").toLowerCase().split("%")[0];
-  if (!value) return "empty";
-  if (value.includes(":")) return ipv6Blocked(value);
+function ipv4Blocked(value) {
   const parts = value.split(".").map((part) => Number(part));
   if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return "bad-ip";
   const [a, b] = parts;
@@ -43,15 +40,37 @@ export function ipBlocked(address) {
   return null;
 }
 
+export function ipBlocked(address) {
+  const value = String(address || "").toLowerCase().split("%")[0];
+  if (!value) return "empty";
+  if (value.includes(":")) return ipv6Blocked(value);
+  return ipv4Blocked(value);
+}
+
 function ipv6Blocked(value) {
-  const expanded = expandIPv6(value);
-  if (!expanded) return "bad-ip";
-  if (expanded === "0000:0000:0000:0000:0000:0000:0000:0001") return "blocked";
-  if (expanded.startsWith("fe80:")) return "blocked";
-  if (expanded.startsWith("fc") || expanded.startsWith("fd")) {
-    if (expanded.startsWith("fd7a:115c:a1e0:")) return "blocked";
+  if (/^64:ff9b::/i.test(value)) return "blocked";
+  const dotted = /(?:^|:)ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(value);
+  if (dotted) {
+    const embedded = ipv4Blocked(dotted[1]);
+    if (embedded) return embedded;
     return "blocked";
   }
+  const expanded = expandIPv6(value);
+  if (!expanded) return "bad-ip";
+  if (expanded === "0000:0000:0000:0000:0000:0000:0000:0000") return "blocked";
+  if (expanded === "0000:0000:0000:0000:0000:0000:0000:0001") return "blocked";
+  if (expanded.startsWith("0000:0000:0000:0000:0000:ffff:")) {
+    const hi = Number.parseInt(expanded.slice(30, 34), 16);
+    const lo = Number.parseInt(expanded.slice(35, 39), 16);
+    const embedded = ipv4Blocked(`${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`);
+    if (embedded) return embedded;
+    return "blocked";
+  }
+  if (expanded.startsWith("0064:ff9b:0000:0000:0000:0000:")) return "blocked";
+  if (expanded.startsWith("2002:")) return "blocked";
+  const first = Number.parseInt(expanded.slice(0, 4), 16);
+  if ((first & 0xffc0) === 0xfe80) return "blocked";
+  if (expanded.startsWith("fc") || expanded.startsWith("fd")) return "blocked";
   if (expanded.startsWith("ff")) return "blocked";
   return null;
 }
@@ -119,6 +138,10 @@ export async function fetchHardened(input, options = {}) {
   const cap = kind === "email" ? EMAIL_CAP : PAGE_CAP;
   let current = input;
   let hops = 0;
+  const requestHeaders = { ...(options.headers || {}), accept: options.accept || "*/*" };
+  delete requestHeaders.cookie;
+  delete requestHeaders.Cookie;
+  let previousHost = "";
   while (hops <= 3) {
     const rule = hostRule(current, job, allowlist);
     if (!rule.ok) return { ok: false, reason: rule.reason, url: current };
@@ -148,9 +171,14 @@ export async function fetchHardened(input, options = {}) {
           },
         },
       });
-    const headers = { ...(options.headers || {}), accept: options.accept || "*/*" };
-    delete headers.cookie;
-    delete headers.Cookie;
+    const host = new URL(current).host;
+    if (previousHost && previousHost !== host) {
+      delete requestHeaders.authorization;
+      delete requestHeaders.Authorization;
+      delete requestHeaders.cookie;
+      delete requestHeaders.Cookie;
+    }
+    previousHost = host;
     const fetchImpl = options.fetchImpl || undiciFetch;
     const timeout = options.timeoutMs ?? TIMEOUT_MS;
     let response;
@@ -158,7 +186,7 @@ export async function fetchHardened(input, options = {}) {
       response = await fetchImpl(current, {
         method: options.method || "GET",
         redirect: "manual",
-        headers,
+        headers: requestHeaders,
         body: options.body,
         dispatcher,
         signal: AbortSignal.timeout(timeout),

@@ -17,8 +17,12 @@ function headerValue(headers, name) {
 }
 
 export function fromDomain(value) {
-  const match = /@([A-Za-z0-9.-]+)/.exec(String(value || ""));
-  return match ? match[1].toLowerCase().replace(/^www\./, "") : "";
+  const text = String(value || "").trim();
+  const angle = /<([^<>]*)>/.exec(text);
+  const addr = (angle ? angle[1] : text).trim().replace(/^"|"$/g, "");
+  const at = addr.lastIndexOf("@");
+  if (at < 1) return "";
+  return addr.slice(at + 1).toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
 }
 
 function parseAuth(value) {
@@ -43,9 +47,26 @@ function instanceOf(value) {
   return match ? Number(match[1]) : null;
 }
 
+function authField(detail, name) {
+  const match = new RegExp(`(?:^|[;\\s])${name}=@?([a-z0-9.-]+)(?=$|[;\\s])`, "i").exec(String(detail || ""));
+  return match ? match[1].toLowerCase().replace(/\.$/, "") : "";
+}
+
+function orgDomain(domain) {
+  const parts = String(domain || "").split(".").filter(Boolean);
+  if (parts.length <= 2) return parts.join(".");
+  return parts.slice(-2).join(".");
+}
+
 function alignedDkim(detail, domain) {
-  const text = String(detail || "").toLowerCase();
-  return text.includes(`header.d=${domain}`) || text.includes(`header.i=@${domain}`) || text.includes(`header.i=${domain}`);
+  const signed = authField(detail, "header\\.d") || authField(detail, "header\\.i");
+  if (!signed || !domain) return false;
+  return signed === domain || orgDomain(signed) === orgDomain(domain);
+}
+
+function dmarcFromMatches(detail, domain) {
+  const from = authField(detail, "header\\.from");
+  return from !== "" && from === domain;
 }
 
 function senderAllowed(domain, allowlist) {
@@ -74,7 +95,8 @@ export function gateMessage({ headers, allowlist }) {
     if (seen.get(instance) > 1) return { ok: false, reason: "duplicate-arc" };
   }
   const direct =
-    parsed.methods.dmarc === "pass" || (parsed.methods.dkim === "pass" && alignedDkim(parsed.details.dkim, domain));
+    (parsed.methods.dmarc === "pass" && dmarcFromMatches(parsed.details.dmarc, domain)) ||
+    (parsed.methods.dkim === "pass" && alignedDkim(parsed.details.dkim, domain));
   if (parsed.methods.arc === "pass") {
     const seal = seals.find((item) => instanceOf(item.value) === 1);
     if (!seal) return { ok: false, reason: "arc-instance" };
@@ -83,7 +105,7 @@ export function gateMessage({ headers, allowlist }) {
     const results = (headers || [])
       .filter((header) => header.name.toLowerCase() === "arc-authentication-results")
       .find((header) => instanceOf(header.value) === 1);
-    if (!results || !/dmarc=pass/i.test(results.value) || !results.value.toLowerCase().includes(domain)) {
+    if (!results || !/mx\.google\.com/i.test(results.value) || !/dmarc=pass/i.test(results.value) || !dmarcFromMatches(results.value, domain)) {
       return { ok: false, reason: "arc-dmarc" };
     }
     return { ok: true, reason: "forwarded" };
@@ -104,19 +126,40 @@ export async function assertTokeninfo({ fetchImpl, token, expectScope, expectEma
     .filter(Boolean)
     .map((scope) => scope.split("/").pop());
   if (scopes.length !== 1 || scopes[0] !== expectScope) throw codedError(2, "scope");
-  if (String(data.email || "").toLowerCase() !== String(expectEmail || "").toLowerCase()) throw codedError(2, "account");
+  if (expectEmail != null && String(data.email || "").toLowerCase() !== String(expectEmail).toLowerCase()) {
+    throw codedError(2, "account");
+  }
   return data;
 }
 
+async function readJsonResponse(response) {
+  if (response?.ok === false && response?.reason) throw codedError(2, response.reason);
+  if (typeof response?.json === "function") return response.json();
+  if (response?.body) return JSON.parse(response.body);
+  return response;
+}
+
 export async function assertGmailToken(options) {
-  return assertTokeninfo({ ...options, expectScope: "gmail.readonly", expectEmail: options.inbox, job: "gmail" });
+  await assertTokeninfo({ ...options, expectScope: "gmail.readonly", job: "gmail" });
+  const url = "https://gmail.googleapis.com/gmail/v1/users/me/profile";
+  const response = options.fetchImpl
+    ? await options.fetchImpl(url)
+    : await fetchHardened(url, { job: "gmail", kind: "email", headers: { authorization: `Bearer ${options.token}` } });
+  const data = await readJsonResponse(response);
+  if (String(data?.emailAddress || "").toLowerCase() !== String(options.inbox || "").toLowerCase()) {
+    throw codedError(2, "account");
+  }
+  return data;
 }
 
 export async function assertDriveToken(options) {
-  return assertTokeninfo({
-    ...options,
-    expectScope: "drive.file",
-    expectEmail: options.account,
-    job: "drive",
-  });
+  await assertTokeninfo({ ...options, expectScope: "drive.file", job: "drive" });
+  const url = "https://www.googleapis.com/drive/v3/about?fields=user";
+  const response = options.fetchImpl
+    ? await options.fetchImpl(url)
+    : await fetchHardened(url, { job: "drive", kind: "email", headers: { authorization: `Bearer ${options.token}` } });
+  const data = await readJsonResponse(response);
+  const email = data?.user?.emailAddress || data?.emailAddress || "";
+  if (String(email).toLowerCase() !== String(options.account || "").toLowerCase()) throw codedError(2, "account");
+  return data;
 }
