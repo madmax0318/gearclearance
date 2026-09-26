@@ -655,6 +655,32 @@ test("AT-26 missing credentials exit 2 and alert", async () => {
   assert.equal(fs.existsSync(path.join(dir, "status.json")), true);
 });
 
+function workflowRunProblems(yaml) {
+  const problems = [];
+  let runIndent = -1;
+  const lines = yaml.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const marker = line.match(/^(\s*)(?:-\s+)?run:\s*\|[+-]?\s*(?:#.*)?$/);
+    if (marker) {
+      runIndent = marker[1].length;
+      continue;
+    }
+    if (runIndent < 0) continue;
+    if (line.trim() === "") continue;
+    const indent = line.match(/^(\s*)/)[1].length;
+    if (indent <= runIndent) {
+      if (!/^\s*(?:-\s+)?[A-Za-z0-9_.-]+:/.test(line)) {
+        problems.push(`line ${index + 1} leaves a run block without a YAML key: ${line}`);
+      }
+      runIndent = -1;
+      continue;
+    }
+    if (line.includes("${{ github.event")) problems.push(`line ${index + 1} puts an event expression in a run script`);
+  }
+  return problems;
+}
+
 test("AT-27 workflow is pull_request only and pins actions", () => {
   const yaml = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
   assert.equal(yaml.includes("pull_request_target"), false);
@@ -664,22 +690,22 @@ test("AT-27 workflow is pull_request only and pins actions", () => {
   assert.equal(uses.length > 0, true);
   for (const use of uses) assert.match(use, /@[0-9a-f]{40}$/);
   assert.equal(yaml.includes("${{ github.event"), true);
-  let runIndent = -1;
-  for (const line of yaml.split("\n")) {
-    const marker = line.match(/^(\s*)run:\s*\|/);
-    if (marker) {
-      runIndent = marker[1].length;
-      continue;
-    }
-    if (runIndent < 0) continue;
-    if (line.trim() === "") continue;
-    const indent = line.match(/^(\s*)/)[1].length;
-    if (indent <= runIndent) {
-      runIndent = -1;
-      continue;
-    }
-    if (line.includes("${{ github.event")) assert.fail(line);
-  }
+  assert.deepEqual(workflowRunProblems(yaml), []);
+  const broken = [
+    "jobs:",
+    "  bot-paths:",
+    "    steps:",
+    "      - name: bot paths",
+    "        run: |",
+    "          while IFS= read -r file; do",
+    "            exit 1",
+    "          done <<EOF",
+    "$files",
+    "EOF",
+  ].join("\n");
+  const caught = workflowRunProblems(broken);
+  assert.equal(caught.length > 0, true);
+  assert.match(caught.join("\n"), /\$files/);
 });
 
 test("AT-28 redaction and gitleaks config", () => {

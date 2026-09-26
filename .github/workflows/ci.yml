@@ -98,9 +98,7 @@ jobs:
               fi
               echo "forbidden $file" >&2
               exit 1
-            done <<EOF
-$files
-EOF
+            done <<< "$files"
           fi
           # bot-paths-end
 
