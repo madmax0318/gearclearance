@@ -299,8 +299,20 @@ test("L-5 installer uses bash, a private data git, and credential file modes", (
   assert.equal(good.status, 0, good.stdout + good.stderr);
 });
 
+test("L-2 readme keeps the token out of Preview", () => {
+  const readme = fs.readFileSync(path.join(repoRoot, "README.md"), "utf8");
+  assert.equal(readme.includes("Preview"), false);
+  assert.match(readme, /Environment variables for Production/);
+});
+
 test("L-6 dates use America/Chicago", () => {
   assert.equal(chicagoDate(new Date("2026-09-26T03:30:00Z")), "2026-09-25");
+});
+
+test("L-8 gitleaks allowlist is the email fixtures only", () => {
+  const config = fs.readFileSync(path.join(repoRoot, ".gitleaks.toml"), "utf8");
+  assert.match(config, /pipeline\/fixtures\/emails\//);
+  assert.equal(config.includes("pipeline/test/"), false);
 });
 
 test("publish creates a branch, a commit, and a pull request through the client", async () => {
