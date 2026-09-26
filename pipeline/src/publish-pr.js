@@ -21,6 +21,27 @@ async function githubJson(url, token, options, fetchImpl) {
   return response;
 }
 
+const BASE = "main";
+
+export function allowedCommitPath(value) {
+  if (typeof value !== "string" || value.length === 0 || value.length > 240) return false;
+  if (value.includes("\\") || value.includes("\0") || value.startsWith("/")) return false;
+  const parts = value.split("/");
+  if (parts.some((part) => part === "" || part === "." || part === ".." || part.includes(".."))) return false;
+  if (value === "data/expired/deals.json") return true;
+  if (/^data\/deals[^/]*\.json$/.test(value)) return true;
+  return /^public\/images\/deals\/(?:[A-Za-z0-9][A-Za-z0-9._-]*\/)*[A-Za-z0-9][A-Za-z0-9._-]*\.(?:jpg|webp)$/.test(value);
+}
+
+function blobPayload(file) {
+  const image = file.path.startsWith("public/images/deals/");
+  if (image) {
+    if (!Buffer.isBuffer(file.content)) throw codedError(3, "image-bytes");
+    return { content: file.content.toString("base64"), encoding: "base64" };
+  }
+  return { content: Buffer.from(String(file.content ?? ""), "utf8").toString("base64"), encoding: "base64" };
+}
+
 export async function publishPullRequest({
   token,
   branch,
@@ -30,28 +51,31 @@ export async function publishPullRequest({
   slug,
   bodySummary = "",
   untrusted = [],
-  base = "main",
+  base,
   fetchImpl,
   files = [],
   message,
 } = {}) {
+  if (base !== undefined) throw codedError(3, "base");
   if (!BRANCH_RE.test(branch)) throw codedError(3, "branch");
   const title = pullTitle({ job, count: cards.length, date, slug });
   const body = pullBody({ summary: bodySummary, untrusted });
   if (!body.endsWith("Opened by stash-deals-bot. Bots never merge.")) throw codedError(3, "body");
+  if (!Array.isArray(files) || files.length === 0) throw codedError(3, "empty");
+  const payloads = files.map((file) => {
+    if (!allowedCommitPath(file?.path)) throw codedError(3, "path");
+    return { path: file.path, payload: blobPayload(file) };
+  });
   const repo = "https://api.github.com/repos/madmax0318/gearclearance";
-  const ref = await githubJson(`${repo}/git/ref/heads/${base}`, token, { method: "GET" }, fetchImpl);
+  const ref = await githubJson(`${repo}/git/ref/heads/${BASE}`, token, { method: "GET" }, fetchImpl);
   const baseSha = ref?.object?.sha;
   if (!baseSha) throw codedError(6, "ref");
   const tree = [];
-  for (const file of files) {
+  for (const file of payloads) {
     const blob = await githubJson(
       `${repo}/git/blobs`,
       token,
-      {
-        method: "POST",
-        body: JSON.stringify({ content: Buffer.from(String(file.content ?? ""), "utf8").toString("base64"), encoding: "base64" }),
-      },
+      { method: "POST", body: JSON.stringify(file.payload) },
       fetchImpl,
     );
     if (!blob?.sha) throw codedError(6, "blob");
@@ -89,7 +113,7 @@ export async function publishPullRequest({
     token,
     {
       method: "POST",
-      body: JSON.stringify({ title, head: branch, base, body }),
+      body: JSON.stringify({ title, head: branch, base: BASE, body }),
     },
     fetchImpl,
   );

@@ -66,16 +66,26 @@ else
 fi
 LIVE_FILE=${STASH_LIVE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/stash-deals/live-jobs}
 
-to_minutes() {
-  hour=${1%%:*}
-  minute=${1##*:}
-  echo $((10#$hour * 60 + 10#$minute))
+to_seconds() {
+  local clock=$1 hour minute second
+  case "$clock" in
+    *[!0-9:]*) echo "bad clock $clock" >&2; return 2 ;;
+  esac
+  IFS=: read -r hour minute second <<< "$clock"
+  [ -n "${hour:-}" ] && [ -n "${minute:-}" ] || { echo "bad clock $clock" >&2; return 2; }
+  second=${second:-0}
+  case "$hour$minute$second" in
+    *[!0-9]*) echo "bad clock $clock" >&2; return 2 ;;
+  esac
+  if [ "$hour" -gt 23 ] || [ "$minute" -gt 59 ] || [ "$second" -gt 59 ]; then
+    echo "bad clock $clock" >&2
+    return 2
+  fi
+  echo $((10#$hour * 3600 + 10#$minute * 60 + 10#$second))
 }
 
 window_contains() {
-  start=$1
-  end=$2
-  point=$3
+  local start=$1 end=$2 point=$3
   if [ "$start" -le "$end" ]; then
     [ "$point" -ge "$start" ] && [ "$point" -lt "$end" ]
   else
@@ -83,14 +93,46 @@ window_contains() {
   fi
 }
 
+timeout_seconds() {
+  local raw
+  raw=$(sed -n 's/^TimeoutStartSec=//p' "$UNIT_SRC/$1" | head -n 1)
+  case "$raw" in
+    *min) echo $(( ${raw%min} * 60 )) ;;
+    *s) echo $(( ${raw%s} )) ;;
+    *) echo "$raw" ;;
+  esac
+}
+
+span_hits_window() {
+  local start=$1 len=$2 win_start=$3 win_end=$4 last delta
+  if window_contains "$win_start" "$win_end" "$start"; then
+    return 0
+  fi
+  last=$(( (start + len - 1) % 86400 ))
+  if window_contains "$win_start" "$win_end" "$last"; then
+    return 0
+  fi
+  delta=$(( (win_start - start + 86400) % 86400 ))
+  [ "$delta" -lt "$len" ]
+}
+
 blackout_conflict() {
   calendars="ONCALENDAR_WATCH ONCALENDAR_WATCH_PROMOTE ONCALENDAR_PREPPINGDEALS ONCALENDAR_AIM ONCALENDAR_EXPIRY"
   for key in $calendars; do
     eval "cal=\${$key:-}"
     [ -n "$cal" ] || continue
+    assert_calendar "$key" "$cal"
     cal_day=${cal%% *}
     cal_clock=${cal##* }
-    point=$(to_minutes "$cal_clock")
+    point=$(to_seconds "$cal_clock")
+    case "$key" in
+      ONCALENDAR_WATCH) service=stash-deals-watch.service.in ;;
+      ONCALENDAR_WATCH_PROMOTE) service=stash-deals-watch-promote.service.in ;;
+      ONCALENDAR_PREPPINGDEALS) service=stash-deals-preppingdeals.service.in ;;
+      ONCALENDAR_AIM) service=stash-deals-aim.service.in ;;
+      ONCALENDAR_EXPIRY) service=stash-deals-expiry.service.in ;;
+    esac
+    length=$(timeout_seconds "$service")
     old_ifs=$IFS
     IFS=';'
     set -f
@@ -102,7 +144,7 @@ blackout_conflict() {
       if [ "$win_day" != "daily" ] && [ "$cal_day" != "daily" ] && [ "$win_day" != "$cal_day" ]; then
         continue
       fi
-      if window_contains "$(to_minutes "$start")" "$(to_minutes "$end")" "$point"; then
+      if span_hits_window "$point" "$length" "$(to_seconds "$start")" "$(to_seconds "$end")"; then
         set +f
         IFS=$old_ifs
         echo "blackout overlap: $key $cal" >&2
@@ -113,6 +155,13 @@ blackout_conflict() {
     IFS=$old_ifs
   done
   return 0
+}
+
+known_job() {
+  case "$1" in
+    watch|watch-promote|preppingdeals|aim|expiry) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 known_cred() {
@@ -186,6 +235,42 @@ forget_live() {
   mv "$LIVE_FILE.tmp" "$LIVE_FILE"
 }
 
+bad_unit_value() {
+  echo "bad unit value $1" >&2
+  exit 2
+}
+
+assert_plain() {
+  label=$1
+  value=$2
+  case "$value" in
+    *$'\n'*|*$'\r'*|*%*) bad_unit_value "$label" ;;
+  esac
+}
+
+assert_abs_path() {
+  label=$1
+  value=$2
+  assert_plain "$label" "$value"
+  case "$value" in
+    /*) ;;
+    *) bad_unit_value "$label" ;;
+  esac
+  case "$value" in
+    *[[:space:]]*|*'..'*) bad_unit_value "$label" ;;
+  esac
+}
+
+assert_calendar() {
+  label=$1
+  value=$2
+  assert_plain "$label" "$value"
+  case "$value" in
+    *'  '*|*'	'*) bad_unit_value "$label" ;;
+  esac
+  printf '%s\n' "$value" | grep -Eq '^[A-Za-z0-9*.,/-]+ [0-9]{1,2}:[0-9]{2}(:[0-9]{2})?$' || bad_unit_value "$label"
+}
+
 render_units() {
   dest=${1:?}
   mkdir -p "$dest"
@@ -210,6 +295,28 @@ render_units() {
     dry=1
     if job_is_live "$job"; then
       dry=0
+    fi
+    case "$calendar" in
+      @*) ;;
+      *) assert_calendar "$name" "$calendar" ;;
+    esac
+    if grep -q '@NODE@' "$src"; then
+      assert_abs_path NODE "${NODE:-}"
+    fi
+    if grep -q '@CHECKOUT@' "$src"; then
+      assert_abs_path CHECKOUT "${CHECKOUT:-}"
+    fi
+    if grep -q '@STASH_ENV@' "$src"; then
+      assert_abs_path STASH_ENV "${STASH_ENV_PATH:-$ENV_FILE}"
+    fi
+    if grep -q '@CRED_GH@' "$src"; then
+      assert_abs_path CRED_GH "${CRED_GH:-}"
+    fi
+    if grep -q '@CRED_GMAIL@' "$src"; then
+      assert_abs_path CRED_GMAIL "${CRED_GMAIL:-}"
+    fi
+    if grep -q '@CRED_DRIVE@' "$src"; then
+      assert_abs_path CRED_DRIVE "${CRED_DRIVE:-}"
     fi
     sed \
       -e "s|@ONCALENDAR@|$calendar|g" \
@@ -240,6 +347,8 @@ LockPersonality=yes
 UMask=0077
 StateDirectory=stash-deals
 StateDirectoryMode=0700
+Nice=
+IOSchedulingClass=idle
 EOF
     while IFS= read -r word; do
       if grep -F -q "$word" "$src"; then
@@ -346,6 +455,10 @@ case "$MODE" in
     install_deps
     ;;
   enable-watch|live|dry-run|install)
+    if [ "$MODE" = "live" ] && ! known_job "$LIVE_JOB"; then
+      echo "unknown job $LIVE_JOB" >&2
+      exit 2
+    fi
     if [ "$MODE" = "install" ] || [ "$MODE" = "live" ] || [ "$MODE" = "dry-run" ]; then
       if [ -n "${INSTALL_REF:-}" ]; then
         verify_git "$INSTALL_REF"
@@ -367,11 +480,14 @@ case "$MODE" in
     unit_home=${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user
     render_units "$unit_home"
     if command -v systemd-analyze >/dev/null 2>&1; then
-      systemd-analyze --user verify "$unit_home"/stash-deals-*.service || true
+      systemd-analyze --user verify "$unit_home"/stash-deals-*.service
     fi
     if command -v systemctl >/dev/null 2>&1; then
-      systemctl --user daemon-reload || true
-      systemctl --user enable stash-deals-preppingdeals.timer stash-deals-aim.timer stash-deals-expiry.timer || true
+      systemctl --user daemon-reload
+      systemctl --user enable stash-deals-preppingdeals.timer stash-deals-aim.timer stash-deals-expiry.timer
+      if [ "$MODE" = "enable-watch" ]; then
+        systemctl --user enable stash-deals-watch.timer stash-deals-watch-promote.timer
+      fi
     fi
     ;;
 esac

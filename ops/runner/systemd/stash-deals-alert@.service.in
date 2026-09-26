@@ -3,7 +3,9 @@ Description=Stash deals alert
 
 [Service]
 Type=oneshot
-TimeoutStartSec=120
+TimeoutStartSec=15min
+Nice=19
+IOSchedulingClass=idle
 SyslogIdentifier=stash-deals
 ExecStart=@NODE@ @CHECKOUT@/pipeline/src/jobs/alert.js
 WorkingDirectory=@CHECKOUT@

@@ -16,10 +16,10 @@ export async function runWatchPromote({
   branch,
   tokenOptions,
   fetchImpl,
+  mint = mintInstallationToken,
+  publish = publishPullRequest,
 }) {
   const picks = await readRecordedPicks({ records, drive, reviewIds, now });
-  const selected = cards.filter((card) => card.pick_id && picks.accepted.includes(card.pick_id));
-  const room = withinHeadroom(liveCount, selected);
   const stamp = String(date || "").replace(/-/g, "");
   const head = branch || `bot/watch/${stamp}-1`;
   if (!BRANCH_RE.test(head)) {
@@ -27,6 +27,19 @@ export async function runWatchPromote({
     error.exitCode = 3;
     throw error;
   }
+  if (!Array.isArray(picks.accepted) || picks.accepted.length === 0) {
+    return {
+      job: "watch-promote",
+      dry_run: dryRun,
+      date,
+      branch: head,
+      candidates: [],
+      deferred: picks.deferred || [],
+      published: false,
+    };
+  }
+  const selected = cards.filter((card) => card.pick_id && picks.accepted.includes(card.pick_id));
+  const room = withinHeadroom(liveCount, selected);
   const plan = {
     job: "watch-promote",
     dry_run: dryRun,
@@ -40,10 +53,11 @@ export async function runWatchPromote({
       pick_ids: card.pick_id ? [card.pick_id] : picks.accepted,
     })),
     deferred: [...room.deferred, ...picks.deferred],
+    published: false,
   };
   if (!dryRun) {
-    const minted = await mintInstallationToken({ ...tokenOptions, fetchImpl });
-    await publishPullRequest({
+    const minted = await mint({ ...tokenOptions, fetchImpl });
+    await publish({
       token: minted.token,
       branch: head,
       job: "watch",
@@ -52,6 +66,7 @@ export async function runWatchPromote({
       fetchImpl,
       untrusted: plan.candidates.map((card) => card.title),
     });
+    plan.published = true;
   }
   return plan;
 }

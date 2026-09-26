@@ -4,7 +4,9 @@ OnFailure=stash-deals-alert@%n.service
 
 [Service]
 Type=oneshot
-TimeoutStartSec=120
+TimeoutStartSec=30min
+Nice=19
+IOSchedulingClass=idle
 SyslogIdentifier=stash-deals
 ExecStart=@NODE@ @CHECKOUT@/pipeline/src/jobs/run.js watch-promote
 WorkingDirectory=@CHECKOUT@
